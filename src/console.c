@@ -507,6 +507,7 @@ void Con_DrawInput (void)
 
 // remove cursor
 	key_lines[edit_line][key_linepos] = 0;
+	(void)y;
 }
 
 

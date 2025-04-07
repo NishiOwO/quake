@@ -196,7 +196,7 @@ record <demoname> <map> [cd track]
 void CL_Record_f (void)
 {
 	int		c;
-	char	name[MAX_OSPATH];
+	char	name[MAX_OSPATH + 1];
 	int		track;
 
 	if (cmd_source != src_command)

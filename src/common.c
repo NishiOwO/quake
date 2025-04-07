@@ -1281,7 +1281,7 @@ The filename will be prefixed by the current game directory
 void COM_WriteFile (char *filename, void *data, int len)
 {
 	int             handle;
-	char    name[MAX_OSPATH];
+	char    name[MAX_OSPATH + 1];
 	
 	sprintf (name, "%s/%s", com_gamedir, filename);
 
@@ -1365,8 +1365,8 @@ Sets com_filesize and one of handle or file
 int COM_FindFile (char *filename, int *handle, FILE **file)
 {
 	searchpath_t    *search;
-	char            netpath[MAX_OSPATH];
-	char            cachepath[MAX_OSPATH];
+	char            netpath[MAX_OSPATH + 1];
+	char            cachepath[MAX_OSPATH * 2 + 1];
 	pack_t          *pak;
 	int                     i;
 	int                     findtime, cachetime;
