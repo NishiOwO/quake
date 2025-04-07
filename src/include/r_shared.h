@@ -30,8 +30,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAXWORKINGVERTS	(MAXVERTS+4)	// max points in an intermediate
 										//  polygon (while processing)
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
-#define	MAXHEIGHT	1024
-#define	MAXWIDTH	1280
+#define	MAXHEIGHT		1024
+#define	MAXWIDTH		1280
+#define MAXDIMENSION	((MAXHEIGHT > MAXWIDTH) ? MAXHEIGHT : MAXWIDTH)
+
+#define SIN_BUFFER_SIZE	(MAXDIMENSION+CYCLE)
 
 #define INFINITE_DISTANCE	0x10000		// distance that's always guaranteed to
 										//  be farther away than anything in
@@ -51,17 +54,17 @@ extern int		r_drawnpolycount;
 
 extern cvar_t	r_clearcolor;
 
-extern int	sintable[1280];
-extern int	intsintable[1280];
+extern int	sintable[SIN_BUFFER_SIZE];
+extern int	intsintable[SIN_BUFFER_SIZE];
 
 extern	vec3_t	vup, base_vup;
 extern	vec3_t	vpn, base_vpn;
 extern	vec3_t	vright, base_vright;
 extern	entity_t		*currententity;
 
-#define NUMSTACKEDGES		2000
+#define NUMSTACKEDGES		2400
 #define	MINEDGES			NUMSTACKEDGES
-#define NUMSTACKSURFACES	1000
+#define NUMSTACKSURFACES	800
 #define MINSURFACES			NUMSTACKSURFACES
 #define	MAXSPANS			3000
 

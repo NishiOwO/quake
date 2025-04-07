@@ -28,30 +28,33 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	MAX_MAP_ENTITIES	1024
 #define	MAX_MAP_ENTSTRING	65536
 
-#define	MAX_MAP_PLANES		8192
+#define	MAX_MAP_PLANES		32767
 #define	MAX_MAP_NODES		32767		// because negative shorts are contents
 #define	MAX_MAP_CLIPNODES	32767		//
-#define	MAX_MAP_LEAFS		32767		// 
+#define	MAX_MAP_LEAFS		8192
 #define	MAX_MAP_VERTS		65535
 #define	MAX_MAP_FACES		65535
 #define	MAX_MAP_MARKSURFACES 65535
 #define	MAX_MAP_TEXINFO		4096
 #define	MAX_MAP_EDGES		256000
 #define	MAX_MAP_SURFEDGES	512000
+#define	MAX_MAP_TEXTURES	512
 #define	MAX_MAP_MIPTEX		0x200000
 #define	MAX_MAP_LIGHTING	0x100000
 #define	MAX_MAP_VISIBILITY	0x100000
+
+#define	MAX_MAP_PORTALS		65536
 
 // key / value pair sizes
 
 #define	MAX_KEY		32
 #define	MAX_VALUE	1024
 
-
 //=============================================================================
 
 
 #define BSPVERSION	29
+#define	TOOLVERSION	2
 
 typedef struct
 {
@@ -137,6 +140,16 @@ typedef struct
 #define	CONTENTS_SLIME		-4
 #define	CONTENTS_LAVA		-5
 #define	CONTENTS_SKY		-6
+#define	CONTENTS_ORIGIN		-7		// removed at csg time
+#define	CONTENTS_CLIP		-8		// changed to contents_solid
+
+#define	CONTENTS_CURRENT_0		-9
+#define	CONTENTS_CURRENT_90		-10
+#define	CONTENTS_CURRENT_180	-11
+#define	CONTENTS_CURRENT_270	-12
+#define	CONTENTS_CURRENT_UP		-13
+#define	CONTENTS_CURRENT_DOWN	-14
+
 
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct
@@ -211,9 +224,14 @@ typedef struct
 	byte		ambient_level[NUM_AMBIENTS];
 } dleaf_t;
 
+
 //============================================================================
 
 #ifndef QUAKE_GAME
+
+#define	ANGLE_UP	-1
+#define	ANGLE_DOWN	-2
+
 
 // the utilities get to be lazy and just use large static arrays
 
@@ -263,9 +281,44 @@ extern	int			numsurfedges;
 extern	int			dsurfedges[MAX_MAP_SURFEDGES];
 
 
+void DecompressVis (byte *in, byte *decompressed);
+int CompressVis (byte *vis, byte *dest);
 
 void	LoadBSPFile (char *filename);
 void	WriteBSPFile (char *filename);
 void	PrintBSPFileSizes (void);
+
+//===============
+
+
+typedef struct epair_s
+{
+	struct epair_s	*next;
+	char	*key;
+	char	*value;
+} epair_t;
+
+typedef struct
+{
+	vec3_t		origin;
+	int			firstbrush;
+	int			numbrushes;
+	epair_t		*epairs;
+} entity_t;
+
+extern	int			num_entities;
+extern	entity_t	entities[MAX_MAP_ENTITIES];
+
+void	ParseEntities (void);
+void	UnparseEntities (void);
+
+void 	SetKeyValue (entity_t *ent, char *key, char *value);
+char 	*ValueForKey (entity_t *ent, char *key);
+// will return "" if not present
+
+vec_t	FloatForKey (entity_t *ent, char *key);
+void 	GetVectorForKey (entity_t *ent, char *key, vec3_t vec);
+
+epair_t *ParseEpair (void);
 
 #endif

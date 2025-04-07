@@ -31,7 +31,12 @@ when crossing a water boudnary.
 
 */
 
-cvar_t	lcd_x = {"lcd_x", "0"};	// FIXME: make this work sometime...
+cvar_t		lcd_x = {"lcd_x","0"};
+cvar_t		lcd_yaw = {"lcd_yaw","0"};
+
+cvar_t	scr_ofsx = {"scr_ofsx","0", false};
+cvar_t	scr_ofsy = {"scr_ofsy","0", false};
+cvar_t	scr_ofsz = {"scr_ofsz","0", false};
 
 cvar_t	cl_rollspeed = {"cl_rollspeed", "200"};
 cvar_t	cl_rollangle = {"cl_rollangle", "2.0"};
@@ -54,33 +59,27 @@ cvar_t	v_ipitch_level = {"v_ipitch_level", "0.3", false};
 cvar_t	v_idlescale = {"v_idlescale", "0", false};
 
 cvar_t	crosshair = {"crosshair", "0", true};
-cvar_t	crosshaircolor = {"crosshaircolor", "79", true};
+cvar_t	cl_crossx = {"cl_crossx", "0", false};
+cvar_t	cl_crossy = {"cl_crossy", "0", false};
 
-cvar_t  cl_crossx = {"cl_crossx", "0", true};
-cvar_t  cl_crossy = {"cl_crossy", "0", true};
-
-#ifdef GLQUAKE
 cvar_t	gl_cshiftpercent = {"gl_cshiftpercent", "100", false};
-#endif
-
-cvar_t  v_contentblend = {"v_contentblend", "1", false};
 
 float	v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
 extern	int			in_forward, in_forward2, in_back;
 
-frame_t		*view_frame;
-player_state_t		*view_message;
 
 /*
 ===============
 V_CalcRoll
 
+Used by view and sv_user
 ===============
 */
+vec3_t	forward, right, up;
+
 float V_CalcRoll (vec3_t angles, vec3_t velocity)
 {
-	vec3_t	forward, right, up;
 	float	sign;
 	float	side;
 	float	value;
@@ -91,6 +90,8 @@ float V_CalcRoll (vec3_t angles, vec3_t velocity)
 	side = fabs(side);
 	
 	value = cl_rollangle.value;
+//	if (cl.inwater)
+//		value *= 6;
 
 	if (side < cl_rollspeed.value)
 		side = side * value / cl_rollspeed.value;
@@ -110,28 +111,21 @@ V_CalcBob
 */
 float V_CalcBob (void)
 {
-	static	double	bobtime;
-	static float	bob;
+	float	bob;
 	float	cycle;
 	
-	if (cl.spectator)
-		return 0;
-
-	if (onground == -1)
-		return bob;		// just use old value
-
-	bobtime += host_frametime;
-	cycle = bobtime - (int)(bobtime/cl_bobcycle.value)*cl_bobcycle.value;
+	cycle = cl.time - (int)(cl.time/cl_bobcycle.value)*cl_bobcycle.value;
 	cycle /= cl_bobcycle.value;
 	if (cycle < cl_bobup.value)
 		cycle = M_PI * cycle / cl_bobup.value;
 	else
 		cycle = M_PI + M_PI*(cycle-cl_bobup.value)/(1.0 - cl_bobup.value);
 
-// bob is proportional to simulated velocity in the xy plane
+// bob is proportional to velocity in the xy plane
 // (don't count Z, or jumping messes it up)
 
-	bob = sqrt(cl.simvel[0]*cl.simvel[0] + cl.simvel[1]*cl.simvel[1]) * cl_bob.value;
+	bob = sqrt(cl.velocity[0]*cl.velocity[0] + cl.velocity[1]*cl.velocity[1]) * cl_bob.value;
+//Con_Printf ("speed: %5.1f\n", Length(cl.velocity));
 	bob = bob*0.3 + bob*0.7*sin(cycle);
 	if (bob > 4)
 		bob = 4;
@@ -189,7 +183,7 @@ void V_DriftPitch (void)
 {
 	float		delta, move;
 
-	if (view_message->onground == -1 || cls.demoplayback )
+	if (noclip_anglehack || !cl.onground || cls.demoplayback )
 	{
 		cl.driftmove = 0;
 		cl.pitchvel = 0;
@@ -199,7 +193,7 @@ void V_DriftPitch (void)
 // don't count small mouse motion
 	if (cl.nodrift)
 	{
-		if ( fabs(cl.frames[(cls.netchan.outgoing_sequence-1)&UPDATE_MASK].cmd.forwardmove) < 200)
+		if ( fabs(cl.cmd.forwardmove) < cl_forwardspeed.value)
 			cl.driftmove = 0;
 		else
 			cl.driftmove += host_frametime;
@@ -211,7 +205,7 @@ void V_DriftPitch (void)
 		return;
 	}
 	
-	delta = 0 - cl.viewangles[PITCH];
+	delta = cl.idealpitch - cl.viewangles[PITCH];
 
 	if (!delta)
 	{
@@ -265,7 +259,6 @@ cshift_t	cshift_lava = { {255,80,0}, 150 };
 cvar_t		v_gamma = {"gamma", "1", true};
 
 byte		gammatable[256];	// palette is sent through this
-
 
 #ifdef	GLQUAKE
 byte		ramps[3][256];
@@ -326,6 +319,7 @@ void V_ParseDamage (void)
 	vec3_t	from;
 	int		i;
 	vec3_t	forward, right, up;
+	entity_t	*ent;
 	float	side;
 	float	count;
 	
@@ -368,10 +362,12 @@ void V_ParseDamage (void)
 //
 // calculate view angle kicks
 //
-	VectorSubtract (from, cl.simorg, from);
+	ent = &cl_entities[cl.viewentity];
+	
+	VectorSubtract (from, ent->origin, from);
 	VectorNormalize (from);
 	
-	AngleVectors (cl.simangles, forward, right, up);
+	AngleVectors (ent->angles, forward, right, up);
 
 	side = DotProduct (from, right);
 	v_dmg_roll = count*side*v_kickroll.value;
@@ -421,20 +417,15 @@ Underwater, lava, etc each has a color shift
 */
 void V_SetContentsColor (int contents)
 {
-	if (!v_contentblend.value) {
-		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
-		return;
-	}
-
 	switch (contents)
 	{
 	case CONTENTS_EMPTY:
+	case CONTENTS_SOLID:
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
 		break;
 	case CONTENTS_LAVA:
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_lava;
 		break;
-	case CONTENTS_SOLID:
 	case CONTENTS_SLIME:
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_slime;
 		break;
@@ -450,28 +441,28 @@ V_CalcPowerupCshift
 */
 void V_CalcPowerupCshift (void)
 {
-	if (cl.stats[STAT_ITEMS] & IT_QUAD)
+	if (cl.items & IT_QUAD)
 	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
 		cl.cshifts[CSHIFT_POWERUP].percent = 30;
 	}
-	else if (cl.stats[STAT_ITEMS] & IT_SUIT)
+	else if (cl.items & IT_SUIT)
 	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
 		cl.cshifts[CSHIFT_POWERUP].percent = 20;
 	}
-	else if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
+	else if (cl.items & IT_INVISIBILITY)
 	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 100;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 100;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 100;
 		cl.cshifts[CSHIFT_POWERUP].percent = 100;
 	}
-	else if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY)
+	else if (cl.items & IT_INVULNERABILITY)
 	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
@@ -481,7 +472,6 @@ void V_CalcPowerupCshift (void)
 	else
 		cl.cshifts[CSHIFT_POWERUP].percent = 0;
 }
-
 
 /*
 =============
@@ -506,7 +496,7 @@ void V_CalcBlend (void)
 
 		a2 = ((cl.cshifts[j].percent * gl_cshiftpercent.value) / 100.0) / 255.0;
 
-//		a2 = (cl.cshifts[j].percent/2)/255.0;
+//		a2 = cl.cshifts[j].percent/255.0;
 		if (!a2)
 			continue;
 		a = a + a2*(1-a);
@@ -562,7 +552,7 @@ void V_UpdatePalette (void)
 				cl.prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
 			}
 	}
-
+	
 // drop the damage value
 	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime*150;
 	if (cl.cshifts[CSHIFT_DAMAGE].percent <= 0)
@@ -578,8 +568,6 @@ void V_UpdatePalette (void)
 		return;
 
 	V_CalcBlend ();
-
-//Con_Printf("b: %4.2f %4.2f %4.2f %4.6f\n", v_blend[0],	v_blend[1],	v_blend[2],	v_blend[3]);
 
 	a = v_blend[3];
 	r = 255*v_blend[0]*a;
@@ -623,11 +611,6 @@ void V_UpdatePalette (void)
 	VID_ShiftPalette (pal);	
 }
 #else	// !GLQUAKE
-/*
-=============
-V_UpdatePalette
-=============
-*/
 void V_UpdatePalette (void)
 {
 	int		i, j;
@@ -695,8 +678,8 @@ void V_UpdatePalette (void)
 
 	VID_ShiftPalette (pal);	
 }
-
 #endif	// !GLQUAKE
+
 
 /* 
 ============================================================================== 
@@ -766,6 +749,10 @@ void CalcGunAngle (void)
 
 	cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
 	cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
+
+	cl.viewent.angles[ROLL] -= v_idlescale.value * sin(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
+	cl.viewent.angles[PITCH] -= v_idlescale.value * sin(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
+	cl.viewent.angles[YAW] -= v_idlescale.value * sin(cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
 }
 
 /*
@@ -775,21 +762,25 @@ V_BoundOffsets
 */
 void V_BoundOffsets (void)
 {
+	entity_t	*ent;
+	
+	ent = &cl_entities[cl.viewentity];
+
 // absolutely bound refresh reletive to entity clipping hull
 // so the view can never be inside a solid wall
 
-	if (r_refdef.vieworg[0] < cl.simorg[0] - 14)
-		r_refdef.vieworg[0] = cl.simorg[0] - 14;
-	else if (r_refdef.vieworg[0] > cl.simorg[0] + 14)
-		r_refdef.vieworg[0] = cl.simorg[0] + 14;
-	if (r_refdef.vieworg[1] < cl.simorg[1] - 14)
-		r_refdef.vieworg[1] = cl.simorg[1] - 14;
-	else if (r_refdef.vieworg[1] > cl.simorg[1] + 14)
-		r_refdef.vieworg[1] = cl.simorg[1] + 14;
-	if (r_refdef.vieworg[2] < cl.simorg[2] - 22)
-		r_refdef.vieworg[2] = cl.simorg[2] - 22;
-	else if (r_refdef.vieworg[2] > cl.simorg[2] + 30)
-		r_refdef.vieworg[2] = cl.simorg[2] + 30;
+	if (r_refdef.vieworg[0] < ent->origin[0] - 14)
+		r_refdef.vieworg[0] = ent->origin[0] - 14;
+	else if (r_refdef.vieworg[0] > ent->origin[0] + 14)
+		r_refdef.vieworg[0] = ent->origin[0] + 14;
+	if (r_refdef.vieworg[1] < ent->origin[1] - 14)
+		r_refdef.vieworg[1] = ent->origin[1] - 14;
+	else if (r_refdef.vieworg[1] > ent->origin[1] + 14)
+		r_refdef.vieworg[1] = ent->origin[1] + 14;
+	if (r_refdef.vieworg[2] < ent->origin[2] - 22)
+		r_refdef.vieworg[2] = ent->origin[2] - 22;
+	else if (r_refdef.vieworg[2] > ent->origin[2] + 30)
+		r_refdef.vieworg[2] = ent->origin[2] + 30;
 }
 
 /*
@@ -804,10 +795,6 @@ void V_AddIdle (void)
 	r_refdef.viewangles[ROLL] += v_idlescale.value * sin(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
 	r_refdef.viewangles[PITCH] += v_idlescale.value * sin(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
 	r_refdef.viewangles[YAW] += v_idlescale.value * sin(cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
-
-	cl.viewent.angles[ROLL] -= v_idlescale.value * sin(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
-	cl.viewent.angles[PITCH] -= v_idlescale.value * sin(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
-	cl.viewent.angles[YAW] -= v_idlescale.value * sin(cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
 }
 
 
@@ -822,7 +809,7 @@ void V_CalcViewRoll (void)
 {
 	float		side;
 		
-	side = V_CalcRoll (cl.simangles, cl.simvel);
+	side = V_CalcRoll (cl_entities[cl.viewentity].angles, cl.velocity);
 	r_refdef.viewangles[ROLL] += side;
 
 	if (v_dmg_time > 0)
@@ -830,6 +817,12 @@ void V_CalcViewRoll (void)
 		r_refdef.viewangles[ROLL] += v_dmg_time/v_kicktime.value*v_dmg_roll;
 		r_refdef.viewangles[PITCH] += v_dmg_time/v_kicktime.value*v_dmg_pitch;
 		v_dmg_time -= host_frametime;
+	}
+
+	if (cl.stats[STAT_HEALTH] <= 0)
+	{
+		r_refdef.viewangles[ROLL] = 80;	// dead view angle
+		return;
 	}
 
 }
@@ -843,14 +836,16 @@ V_CalcIntermissionRefdef
 */
 void V_CalcIntermissionRefdef (void)
 {
-	entity_t	*view;
+	entity_t	*ent, *view;
 	float		old;
 
-// view is the weapon model
+// ent is the player model (visible when out of body)
+	ent = &cl_entities[cl.viewentity];
+// view is the weapon model (only visible from inside body)
 	view = &cl.viewent;
 
-	VectorCopy (cl.simorg, r_refdef.vieworg);
-	VectorCopy (cl.simangles, r_refdef.viewangles);
+	VectorCopy (ent->origin, r_refdef.vieworg);
+	VectorCopy (ent->angles, r_refdef.viewangles);
 	view->model = NULL;
 
 // allways idle in intermission
@@ -868,56 +863,69 @@ V_CalcRefdef
 */
 void V_CalcRefdef (void)
 {
-	entity_t	*view;
+	entity_t	*ent, *view;
 	int			i;
 	vec3_t		forward, right, up;
+	vec3_t		angles;
 	float		bob;
 	static float oldz = 0;
 
 	V_DriftPitch ();
 
+// ent is the player model (visible when out of body)
+	ent = &cl_entities[cl.viewentity];
 // view is the weapon model (only visible from inside body)
 	view = &cl.viewent;
+	
 
+// transform the view offset by the model's matrix to get the offset from
+// model origin for the view
+	ent->angles[YAW] = cl.viewangles[YAW];	// the model should face
+										// the view dir
+	ent->angles[PITCH] = -cl.viewangles[PITCH];	// the model should face
+										// the view dir
+										
+	
 	bob = V_CalcBob ();
 	
-// refresh position from simulated origin
-	VectorCopy (cl.simorg, r_refdef.vieworg);
-
-	r_refdef.vieworg[2] += bob;
+// refresh position
+	VectorCopy (ent->origin, r_refdef.vieworg);
+	r_refdef.vieworg[2] += cl.viewheight + bob;
 
 // never let it sit exactly on a node line, because a water plane can
 // dissapear when viewed with the eye exactly on it.
-// the server protocol only specifies to 1/8 pixel, so add 1/16 in each axis
-	r_refdef.vieworg[0] += 1.0/16;
-	r_refdef.vieworg[1] += 1.0/16;
-	r_refdef.vieworg[2] += 1.0/16;
+// the server protocol only specifies to 1/16 pixel, so add 1/32 in each axis
+	r_refdef.vieworg[0] += 1.0/32;
+	r_refdef.vieworg[1] += 1.0/32;
+	r_refdef.vieworg[2] += 1.0/32;
 
-	VectorCopy (cl.simangles, r_refdef.viewangles);
+	VectorCopy (cl.viewangles, r_refdef.viewangles);
 	V_CalcViewRoll ();
 	V_AddIdle ();
 
-	if (view_message->flags & PF_GIB)
-		r_refdef.vieworg[2] += 8;	// gib view height
-	else if (view_message->flags & PF_DEAD)
-		r_refdef.vieworg[2] -= 16;	// corpse view height
-	else
-		r_refdef.vieworg[2] += 22;	// view height
-
-	if (view_message->flags & PF_DEAD)		// PF_GIB will also set PF_DEAD
-		r_refdef.viewangles[ROLL] = 80;	// dead view angle
-
-
 // offsets
-	AngleVectors (cl.simangles, forward, right, up);
+	angles[PITCH] = -ent->angles[PITCH];	// because entity pitches are
+											//  actually backward
+	angles[YAW] = ent->angles[YAW];
+	angles[ROLL] = ent->angles[ROLL];
+
+	AngleVectors (angles, forward, right, up);
+
+	for (i=0 ; i<3 ; i++)
+		r_refdef.vieworg[i] += scr_ofsx.value*forward[i]
+			+ scr_ofsy.value*right[i]
+			+ scr_ofsz.value*up[i];
 	
+	
+	V_BoundOffsets ();
+		
 // set up gun position
-	VectorCopy (cl.simangles, view->angles);
+	VectorCopy (cl.viewangles, view->angles);
 	
 	CalcGunAngle ();
 
-	VectorCopy (cl.simorg, view->origin);
-	view->origin[2] += 22;
+	VectorCopy (ent->origin, view->origin);
+	view->origin[2] += cl.viewheight;
 
 	for (i=0 ; i<3 ; i++)
 	{
@@ -929,6 +937,10 @@ void V_CalcRefdef (void)
 
 // fudge position around to keep amount of weapon visible
 // roughly equal with different FOV
+
+#if 0
+	if (cl.model_precache[cl.stats[STAT_WEAPON]] && strcmp (cl.model_precache[cl.stats[STAT_WEAPON]]->name,  "progs/v_shot2.mdl"))
+#endif
 	if (scr_viewsize.value == 110)
 		view->origin[2] += 1;
 	else if (scr_viewsize.value == 100)
@@ -938,45 +950,36 @@ void V_CalcRefdef (void)
 	else if (scr_viewsize.value == 80)
 		view->origin[2] += 0.5;
 
-	if (view_message->flags & (PF_GIB|PF_DEAD) )
- 		view->model = NULL;
- 	else
-		view->model = cl.model_precache[cl.stats[STAT_WEAPON]];
-	view->frame = view_message->weaponframe;
+	view->model = cl.model_precache[cl.stats[STAT_WEAPON]];
+	view->frame = cl.stats[STAT_WEAPONFRAME];
 	view->colormap = vid.colormap;
 
 // set up the refresh position
-	r_refdef.viewangles[PITCH] += cl.punchangle;
+	VectorAdd (r_refdef.viewangles, cl.punchangle, r_refdef.viewangles);
 
 // smooth out stair step ups
-	if ( (view_message->onground != -1) && (cl.simorg[2] - oldz > 0) )
-	{
-		float steptime;
-		
-		steptime = host_frametime;
-	
-		oldz += steptime * 80;
-		if (oldz > cl.simorg[2])
-			oldz = cl.simorg[2];
-		if (cl.simorg[2] - oldz > 12)
-			oldz = cl.simorg[2] - 12;
-		r_refdef.vieworg[2] += oldz - cl.simorg[2];
-		view->origin[2] += oldz - cl.simorg[2];
-	}
-	else
-		oldz = cl.simorg[2];
-}
-
-/*
-=============
-DropPunchAngle
-=============
-*/
-void DropPunchAngle (void)
+if (cl.onground && ent->origin[2] - oldz > 0)
 {
-	cl.punchangle -= 10*host_frametime;
-	if (cl.punchangle < 0)
-		cl.punchangle = 0;
+	float steptime;
+	
+	steptime = cl.time - cl.oldtime;
+	if (steptime < 0)
+//FIXME		I_Error ("steptime < 0");
+		steptime = 0;
+
+	oldz += steptime * 80;
+	if (oldz > ent->origin[2])
+		oldz = ent->origin[2];
+	if (ent->origin[2] - oldz > 12)
+		oldz = ent->origin[2] - 12;
+	r_refdef.vieworg[2] += oldz - ent->origin[2];
+	view->origin[2] += oldz - ent->origin[2];
+}
+else
+	oldz = ent->origin[2];
+
+	if (chase_active.value)
+		Chase_Update ();
 }
 
 /*
@@ -987,36 +990,73 @@ The player's clipping box goes from (-16 -16 -24) to (16 16 32) from
 the entity origin, so any view position inside that will be valid
 ==================
 */
-extern vrect_t scr_vrect;
+extern vrect_t	scr_vrect;
 
 void V_RenderView (void)
 {
-//	if (cl.simangles[ROLL])
-//		Sys_Error ("cl.simangles[ROLL]");	// DEBUG
-cl.simangles[ROLL] = 0;	// FIXME @@@ 
-
-	if (cls.state != ca_active)
+	if (con_forcedup)
 		return;
 
-	view_frame = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
-	view_message = &view_frame->playerstate[cl.playernum];
+// don't allow cheats in multiplayer
+	if (cl.maxclients > 1)
+	{
+		Cvar_Set ("scr_ofsx", "0");
+		Cvar_Set ("scr_ofsy", "0");
+		Cvar_Set ("scr_ofsz", "0");
+	}
 
-	DropPunchAngle ();
 	if (cl.intermission)
 	{	// intermission / finale rendering
 		V_CalcIntermissionRefdef ();	
 	}
 	else
 	{
-		V_CalcRefdef ();
+		if (!cl.paused /* && (sv.maxclients > 1 || key_dest == key_game) */ )
+			V_CalcRefdef ();
 	}
 
 	R_PushDlights ();
-	R_RenderView ();
-	
+
+	if (lcd_x.value)
+	{
+		//
+		// render two interleaved views
+		//
+		int		i;
+
+		vid.rowbytes <<= 1;
+		vid.aspect *= 0.5;
+
+		r_refdef.viewangles[YAW] -= lcd_yaw.value;
+		for (i=0 ; i<3 ; i++)
+			r_refdef.vieworg[i] -= right[i]*lcd_x.value;
+		R_RenderView ();
+
+		vid.buffer += vid.rowbytes>>1;
+
+		R_PushDlights ();
+
+		r_refdef.viewangles[YAW] += lcd_yaw.value*2;
+		for (i=0 ; i<3 ; i++)
+			r_refdef.vieworg[i] += 2*right[i]*lcd_x.value;
+		R_RenderView ();
+
+		vid.buffer -= vid.rowbytes>>1;
+
+		r_refdef.vrect.height <<= 1;
+
+		vid.rowbytes >>= 1;
+		vid.aspect *= 2;
+	}
+	else
+	{
+		R_RenderView ();
+	}
+
 #ifndef GLQUAKE
 	if (crosshair.value)
-		Draw_Crosshair();
+		Draw_Character (scr_vrect.x + scr_vrect.width/2 + cl_crossx.value, 
+			scr_vrect.y + scr_vrect.height/2 + cl_crossy.value, '+');
 #endif
 		
 }
@@ -1034,6 +1074,9 @@ void V_Init (void)
 	Cmd_AddCommand ("bf", V_BonusFlash_f);
 	Cmd_AddCommand ("centerview", V_StartPitchDrift);
 
+	Cvar_RegisterVariable (&lcd_x);
+	Cvar_RegisterVariable (&lcd_yaw);
+
 	Cvar_RegisterVariable (&v_centermove);
 	Cvar_RegisterVariable (&v_centerspeed);
 
@@ -1044,17 +1087,15 @@ void V_Init (void)
 	Cvar_RegisterVariable (&v_iroll_level);
 	Cvar_RegisterVariable (&v_ipitch_level);
 
-	Cvar_RegisterVariable (&v_contentblend);
-
 	Cvar_RegisterVariable (&v_idlescale);
-	Cvar_RegisterVariable (&crosshaircolor);
 	Cvar_RegisterVariable (&crosshair);
 	Cvar_RegisterVariable (&cl_crossx);
 	Cvar_RegisterVariable (&cl_crossy);
-#ifdef GLQUAKE
 	Cvar_RegisterVariable (&gl_cshiftpercent);
-#endif
 
+	Cvar_RegisterVariable (&scr_ofsx);
+	Cvar_RegisterVariable (&scr_ofsy);
+	Cvar_RegisterVariable (&scr_ofsz);
 	Cvar_RegisterVariable (&cl_rollspeed);
 	Cvar_RegisterVariable (&cl_rollangle);
 	Cvar_RegisterVariable (&cl_bob);
@@ -1064,7 +1105,7 @@ void V_Init (void)
 	Cvar_RegisterVariable (&v_kicktime);
 	Cvar_RegisterVariable (&v_kickroll);
 	Cvar_RegisterVariable (&v_kickpitch);	
-
+	
 	BuildGammaTable (1.0);	// no gamma yet
 	Cvar_RegisterVariable (&v_gamma);
 }

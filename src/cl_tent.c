@@ -21,28 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-
-#define	MAX_BEAMS	8
-typedef struct
-{
-	int		entity;
-	struct model_s	*model;
-	float	endtime;
-	vec3_t	start, end;
-} beam_t;
-
+int			num_temp_entities;
+entity_t	cl_temp_entities[MAX_TEMP_ENTITIES];
 beam_t		cl_beams[MAX_BEAMS];
-
-#define	MAX_EXPLOSIONS	8
-typedef struct
-{
-	vec3_t	origin;
-	float	start;
-	model_t	*model;
-} explosion_t;
-
-explosion_t	cl_explosions[MAX_EXPLOSIONS];
-
 
 sfx_t			*cl_sfx_wizhit;
 sfx_t			*cl_sfx_knighthit;
@@ -51,10 +32,14 @@ sfx_t			*cl_sfx_ric1;
 sfx_t			*cl_sfx_ric2;
 sfx_t			*cl_sfx_ric3;
 sfx_t			*cl_sfx_r_exp3;
+#ifdef QUAKE2
+sfx_t			*cl_sfx_imp;
+sfx_t			*cl_sfx_rail;
+#endif
 
 /*
 =================
-CL_ParseTEnts
+CL_ParseTEnt
 =================
 */
 void CL_InitTEnts (void)
@@ -66,44 +51,10 @@ void CL_InitTEnts (void)
 	cl_sfx_ric2 = S_PrecacheSound ("weapons/ric2.wav");
 	cl_sfx_ric3 = S_PrecacheSound ("weapons/ric3.wav");
 	cl_sfx_r_exp3 = S_PrecacheSound ("weapons/r_exp3.wav");
-}
-
-/*
-=================
-CL_ClearTEnts
-=================
-*/
-void CL_ClearTEnts (void)
-{
-	memset (&cl_beams, 0, sizeof(cl_beams));
-	memset (&cl_explosions, 0, sizeof(cl_explosions));
-}
-
-/*
-=================
-CL_AllocExplosion
-=================
-*/
-explosion_t *CL_AllocExplosion (void)
-{
-	int		i;
-	float	time;
-	int		index;
-	
-	for (i=0 ; i<MAX_EXPLOSIONS ; i++)
-		if (!cl_explosions[i].model)
-			return &cl_explosions[i];
-// find the oldest explosion
-	time = cl.time;
-	index = 0;
-
-	for (i=0 ; i<MAX_EXPLOSIONS ; i++)
-		if (cl_explosions[i].start < time)
-		{
-			time = cl_explosions[i].start;
-			index = i;
-		}
-	return &cl_explosions[index];
+#ifdef QUAKE2
+	cl_sfx_imp = S_PrecacheSound ("shambler/sattck1.wav");
+	cl_sfx_rail = S_PrecacheSound ("weapons/lstart.wav");
+#endif
 }
 
 /*
@@ -165,10 +116,12 @@ void CL_ParseTEnt (void)
 {
 	int		type;
 	vec3_t	pos;
+#ifdef QUAKE2
+	vec3_t	endpos;
+#endif
 	dlight_t	*dl;
 	int		rnd;
-	explosion_t	*ex;
-	int		cnt;
+	int		colorStart, colorLength;
 
 	type = MSG_ReadByte ();
 	switch (type)
@@ -193,8 +146,11 @@ void CL_ParseTEnt (void)
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
+#ifdef GLTEST
+		Test_Spawn (pos);
+#else
 		R_RunParticleEffect (pos, vec3_origin, 0, 10);
-
+#endif
 		if ( rand() % 5 )
 			S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
 		else
@@ -228,32 +184,24 @@ void CL_ParseTEnt (void)
 		}
 		break;
 		
+	case TE_GUNSHOT:			// bullet hitting wall
+		pos[0] = MSG_ReadCoord ();
+		pos[1] = MSG_ReadCoord ();
+		pos[2] = MSG_ReadCoord ();
+		R_RunParticleEffect (pos, vec3_origin, 0, 20);
+		break;
+		
 	case TE_EXPLOSION:			// rocket explosion
-	// particles
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
 		R_ParticleExplosion (pos);
-		
-	// light
 		dl = CL_AllocDlight (0);
 		VectorCopy (pos, dl->origin);
 		dl->radius = 350;
 		dl->die = cl.time + 0.5;
 		dl->decay = 300;
-		dl->color[0] = 0.2;
-		dl->color[1] = 0.1;
-		dl->color[2] = 0.05;
-		dl->color[3] = 0.7;
-	
-	// sound
 		S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
-	
-	// sprite
-		ex = CL_AllocExplosion ();
-		VectorCopy (pos, ex->origin);
-		ex->start = cl.time;
-		ex->model = Mod_ForName ("progs/s_explod.spr", true);
 		break;
 		
 	case TE_TAREXPLOSION:			// tarbaby explosion
@@ -277,6 +225,12 @@ void CL_ParseTEnt (void)
 		CL_ParseBeam (Mod_ForName("progs/bolt3.mdl", true));
 		break;
 	
+// PGM 01/21/97 
+	case TE_BEAM:				// grappling hook beam
+		CL_ParseBeam (Mod_ForName("progs/beam.mdl", true));
+		break;
+// PGM 01/21/97
+
 	case TE_LAVASPLASH:	
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
@@ -290,29 +244,48 @@ void CL_ParseTEnt (void)
 		pos[2] = MSG_ReadCoord ();
 		R_TeleportSplash (pos);
 		break;
-
-	case TE_GUNSHOT:			// bullet hitting wall
-		cnt = MSG_ReadByte ();
+		
+	case TE_EXPLOSION2:				// color mapped explosion
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
-		R_RunParticleEffect (pos, vec3_origin, 0, 20*cnt);
+		colorStart = MSG_ReadByte ();
+		colorLength = MSG_ReadByte ();
+		R_ParticleExplosion2 (pos, colorStart, colorLength);
+		dl = CL_AllocDlight (0);
+		VectorCopy (pos, dl->origin);
+		dl->radius = 350;
+		dl->die = cl.time + 0.5;
+		dl->decay = 300;
+		S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 		break;
 		
-	case TE_BLOOD:				// bullets hitting body
-		cnt = MSG_ReadByte ();
+#ifdef QUAKE2
+	case TE_IMPLOSION:
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
-		R_RunParticleEffect (pos, vec3_origin, 73, 20*cnt);
+		S_StartSound (-1, 0, cl_sfx_imp, pos, 1, 1);
 		break;
 
-	case TE_LIGHTNINGBLOOD:		// lightning hitting body
+	case TE_RAILTRAIL:
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
-		R_RunParticleEffect (pos, vec3_origin, 225, 50);
+		endpos[0] = MSG_ReadCoord ();
+		endpos[1] = MSG_ReadCoord ();
+		endpos[2] = MSG_ReadCoord ();
+		S_StartSound (-1, 0, cl_sfx_rail, pos, 1, 1);
+		S_StartSound (-1, 1, cl_sfx_r_exp3, endpos, 1, 1);
+		R_RocketTrail (pos, endpos, 0+128);
+		R_ParticleExplosion (endpos);
+		dl = CL_AllocDlight (-1);
+		VectorCopy (endpos, dl->origin);
+		dl->radius = 350;
+		dl->die = cl.time + 0.5;
+		dl->decay = 300;
 		break;
+#endif
 
 	default:
 		Sys_Error ("CL_ParseTEnt: bad type");
@@ -331,11 +304,13 @@ entity_t *CL_NewTempEntity (void)
 
 	if (cl_numvisedicts == MAX_VISEDICTS)
 		return NULL;
-	ent = &cl_visedicts[cl_numvisedicts];
-	cl_numvisedicts++;
-	ent->keynum = 0;
-	
+	if (num_temp_entities == MAX_TEMP_ENTITIES)
+		return NULL;
+	ent = &cl_temp_entities[num_temp_entities];
 	memset (ent, 0, sizeof(*ent));
+	num_temp_entities++;
+	cl_visedicts[cl_numvisedicts] = ent;
+	cl_numvisedicts++;
 
 	ent->colormap = vid.colormap;
 	return ent;
@@ -344,10 +319,10 @@ entity_t *CL_NewTempEntity (void)
 
 /*
 =================
-CL_UpdateBeams
+CL_UpdateTEnts
 =================
 */
-void CL_UpdateBeams (void)
+void CL_UpdateTEnts (void)
 {
 	int			i;
 	beam_t		*b;
@@ -357,6 +332,8 @@ void CL_UpdateBeams (void)
 	float		yaw, pitch;
 	float		forward;
 
+	num_temp_entities = 0;
+
 // update lightning
 	for (i=0, b=cl_beams ; i< MAX_BEAMS ; i++, b++)
 	{
@@ -364,10 +341,9 @@ void CL_UpdateBeams (void)
 			continue;
 
 	// if coming from the player, update the start position
-		if (b->entity == cl.playernum+1)	// entity 0 is the world
+		if (b->entity == cl.viewentity)
 		{
-			VectorCopy (cl.simorg, b->start);
-//			b->start[2] -= 22;	// adjust for view height
+			VectorCopy (cl_entities[cl.viewentity].origin, b->start);
 		}
 
 	// calculate pitch and yaw
@@ -415,45 +391,4 @@ void CL_UpdateBeams (void)
 	
 }
 
-/*
-=================
-CL_UpdateExplosions
-=================
-*/
-void CL_UpdateExplosions (void)
-{
-	int			i;
-	int			f;
-	explosion_t	*ex;
-	entity_t	*ent;
 
-	for (i=0, ex=cl_explosions ; i< MAX_EXPLOSIONS ; i++, ex++)
-	{
-		if (!ex->model)
-			continue;
-		f = 10*(cl.time - ex->start);
-		if (f >= ex->model->numframes)
-		{
-			ex->model = NULL;
-			continue;
-		}
-
-		ent = CL_NewTempEntity ();
-		if (!ent)
-			return;
-		VectorCopy (ex->origin, ent->origin);
-		ent->model = ex->model;
-		ent->frame = f;
-	}
-}
-
-/*
-=================
-CL_UpdateTEnts
-=================
-*/
-void CL_UpdateTEnts (void)
-{
-	CL_UpdateBeams ();
-	CL_UpdateExplosions ();
-}

@@ -34,6 +34,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 
 
+#ifdef _WIN32
 // Function prototypes for the Texture Object Extension routines
 typedef GLboolean (APIENTRY *ARETEXRESFUNCPTR)(GLsizei, const GLuint *,
                     const GLboolean *);
@@ -48,6 +49,7 @@ typedef void (APIENTRY *TEXSUBIMAGEPTR)(int, int, int, int, int, int, int, int, 
 extern	BINDTEXFUNCPTR bindTexFunc;
 extern	DELTEXFUNCPTR delTexFunc;
 extern	TEXSUBIMAGEPTR TexSubImage2DFunc;
+#endif
 
 extern	int texture_extension_number;
 extern	int		texture_mode;
@@ -56,7 +58,6 @@ extern	float	gldepthmin, gldepthmax;
 
 void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
 void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
-void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha);
 int GL_FindTexture (char *identifier);
 
@@ -179,7 +180,6 @@ extern	qboolean	envmap;
 extern	int	currenttexture;
 extern	int	cnttextures[2];
 extern	int	particletexture;
-extern	int	netgraphtexture;	// netgraph texture
 extern	int	playertextures;
 
 extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
@@ -197,7 +197,6 @@ extern	cvar_t	r_mirroralpha;
 extern	cvar_t	r_wateralpha;
 extern	cvar_t	r_dynamic;
 extern	cvar_t	r_novis;
-extern	cvar_t	r_netgraph;
 
 extern	cvar_t	gl_clear;
 extern	cvar_t	gl_cull;
@@ -210,7 +209,7 @@ extern	cvar_t	gl_keeptjunctions;
 extern	cvar_t	gl_reporttjunctions;
 extern	cvar_t	gl_flashblend;
 extern	cvar_t	gl_nocolors;
-extern	cvar_t	gl_finish;
+extern	cvar_t	gl_doubleeyes;
 
 extern	int		gl_lightmap_format;
 extern	int		gl_solid_format;
@@ -237,66 +236,19 @@ void GL_Bind (int texnum);
 #define    TEXTURE0_SGIS				0x835E
 #define    TEXTURE1_SGIS				0x835F
 
-#ifdef _WIN32
+#ifndef _WIN32
+#ifdef APIENTRY
+#undef APIENTRY
+#endif
+#define APIENTRY /* */
+#endif
+
 typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
 typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
 extern lpMTexFUNC qglMTexCoord2fSGIS;
 extern lpSelTexFUNC qglSelectTextureSGIS;
-#endif
 
 extern qboolean gl_mtexable;
 
 void GL_DisableMultitexture(void);
 void GL_EnableMultitexture(void);
-
-//
-// gl_warp.c
-//
-void GL_SubdivideSurface (msurface_t *fa);
-void EmitBothSkyLayers (msurface_t *fa);
-void EmitWaterPolys (msurface_t *fa);
-void EmitSkyPolys (msurface_t *fa);
-void R_DrawSkyChain (msurface_t *s);
-
-//
-// gl_draw.c
-//
-int GL_LoadPicTexture (qpic_t *pic);
-void GL_Set2D (void);
-
-//
-// gl_rmain.c
-//
-qboolean R_CullBox (vec3_t mins, vec3_t maxs);
-void R_RotateForEntity (entity_t *e);
-
-//
-// gl_rlight.c
-//
-void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
-void R_AnimateLight (void);
-void R_RenderDlights (void);
-int R_LightPoint (vec3_t p);
-
-//
-// gl_refrag.c
-//
-void R_StoreEfrags (efrag_t **ppefrag);
-
-//
-// gl_mesh.c
-//
-void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr);
-
-//
-// gl_rsurf.c
-//
-void R_DrawBrushModel (entity_t *e);
-void R_DrawWorld (void);
-void GL_BuildLightmaps (void);
-
-//
-// gl_ngraph.c
-//
-void R_NetGraph (void);
-

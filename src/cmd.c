@@ -34,9 +34,10 @@ typedef struct cmdalias_s
 
 cmdalias_t	*cmd_alias;
 
-qboolean	cmd_wait;
+int trashtest;
+int *trashspot;
 
-cvar_t cl_warncmd = {"cl_warncmd", "0"};
+qboolean	cmd_wait;
 
 //=============================================================================
 
@@ -63,7 +64,6 @@ void Cmd_Wait_f (void)
 */
 
 sizebuf_t	cmd_text;
-byte		cmd_text_buf[8192];
 
 /*
 ============
@@ -72,9 +72,9 @@ Cbuf_Init
 */
 void Cbuf_Init (void)
 {
-	cmd_text.data = cmd_text_buf;
-	cmd_text.maxsize = sizeof(cmd_text_buf);
+	SZ_Alloc (&cmd_text, 8192);		// space for commands and script files
 }
+
 
 /*
 ============
@@ -94,6 +94,7 @@ void Cbuf_AddText (char *text)
 		Con_Printf ("Cbuf_AddText: overflow\n");
 		return;
 	}
+
 	SZ_Write (&cmd_text, text, Q_strlen (text));
 }
 
@@ -125,7 +126,7 @@ void Cbuf_InsertText (char *text)
 		
 // add the entire text of the file
 	Cbuf_AddText (text);
-	SZ_Write (&cmd_text, "\n", 1);
+	
 // add the copied off data
 	if (templen)
 	{
@@ -180,7 +181,7 @@ void Cbuf_Execute (void)
 		}
 
 // execute the command line
-		Cmd_ExecuteString (line);
+		Cmd_ExecuteString (line, src_command);
 		
 		if (cmd_wait)
 		{	// skip out while text still remains in buffer, leaving it
@@ -215,6 +216,12 @@ void Cmd_StuffCmds_f (void)
 	int		s;
 	char	*text, *build, c;
 		
+	if (Cmd_Argc () != 1)
+	{
+		Con_Printf ("stuffcmds : execute command line parameters\n");
+		return;
+	}
+
 // build the combined string to parse from
 	s = 0;
 	for (i=1 ; i<com_argc ; i++)
@@ -284,7 +291,6 @@ void Cmd_Exec_f (void)
 		return;
 	}
 
-	// FIXME: is this safe freeing the hunk here???
 	mark = Hunk_LowMark ();
 	f = (char *)COM_LoadHunkFile (Cmd_Argv(1));
 	if (!f)
@@ -292,8 +298,7 @@ void Cmd_Exec_f (void)
 		Con_Printf ("couldn't exec %s\n",Cmd_Argv(1));
 		return;
 	}
-	if (!Cvar_Command () && (cl_warncmd.value || developer.value))
-		Con_Printf ("execing %s\n",Cmd_Argv(1));
+	Con_Printf ("execing %s\n",Cmd_Argv(1));
 	
 	Cbuf_InsertText (f);
 	Hunk_FreeToLowMark (mark);
@@ -410,9 +415,28 @@ static	char		*cmd_argv[MAX_ARGS];
 static	char		*cmd_null_string = "";
 static	char		*cmd_args = NULL;
 
+cmd_source_t	cmd_source;
 
 
 static	cmd_function_t	*cmd_functions;		// possible commands to execute
+
+/*
+============
+Cmd_Init
+============
+*/
+void Cmd_Init (void)
+{
+//
+// register our commands
+//
+	Cmd_AddCommand ("stuffcmds",Cmd_StuffCmds_f);
+	Cmd_AddCommand ("exec",Cmd_Exec_f);
+	Cmd_AddCommand ("echo",Cmd_Echo_f);
+	Cmd_AddCommand ("alias",Cmd_Alias_f);
+	Cmd_AddCommand ("cmd", Cmd_ForwardToServer);
+	Cmd_AddCommand ("wait", Cmd_Wait_f);
+}
 
 /*
 ============
@@ -431,7 +455,7 @@ Cmd_Argv
 */
 char	*Cmd_Argv (int arg)
 {
-	if ( arg >= cmd_argc )
+	if ( (unsigned)arg >= cmd_argc )
 		return cmd_null_string;
 	return cmd_argv[arg];	
 }
@@ -439,14 +463,10 @@ char	*Cmd_Argv (int arg)
 /*
 ============
 Cmd_Args
-
-Returns a single string containing argv(1) to argv(argc()-1)
 ============
 */
 char		*Cmd_Args (void)
 {
-	if (!cmd_args)
-		return "";
 	return cmd_args;
 }
 
@@ -569,90 +589,19 @@ char *Cmd_CompleteCommand (char *partial)
 {
 	cmd_function_t	*cmd;
 	int				len;
-	cmdalias_t		*a;
 	
 	len = Q_strlen(partial);
 	
 	if (!len)
 		return NULL;
 		
-// check for exact match
+// check functions
 	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
-		if (!strcmp (partial,cmd->name))
+		if (!Q_strncmp (partial,cmd->name, len))
 			return cmd->name;
-	for (a=cmd_alias ; a ; a=a->next)
-		if (!strcmp (partial, a->name))
-			return a->name;
-
-// check for partial match
-	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
-		if (!strncmp (partial,cmd->name, len))
-			return cmd->name;
-	for (a=cmd_alias ; a ; a=a->next)
-		if (!strncmp (partial, a->name, len))
-			return a->name;
 
 	return NULL;
 }
-
-#ifndef SERVERONLY		// FIXME
-/*
-===================
-Cmd_ForwardToServer
-
-adds the current command line as a clc_stringcmd to the client message.
-things like godmode, noclip, etc, are commands directed to the server,
-so when they are typed in at the console, they will need to be forwarded.
-===================
-*/
-void Cmd_ForwardToServer (void)
-{
-	if (cls.state == ca_disconnected)
-	{
-		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
-		return;
-	}
-	
-	if (cls.demoplayback)
-		return;		// not really connected
-
-	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-	SZ_Print (&cls.netchan.message, Cmd_Argv(0));
-	if (Cmd_Argc() > 1)
-	{
-		SZ_Print (&cls.netchan.message, " ");
-		SZ_Print (&cls.netchan.message, Cmd_Args());
-	}
-}
-
-// don't forward the first argument
-void Cmd_ForwardToServer_f (void)
-{
-	if (cls.state == ca_disconnected)
-	{
-		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
-		return;
-	}
-
-	if (Q_strcasecmp(Cmd_Argv(1), "snap") == 0) {
-		Cbuf_InsertText ("snap\n");
-		return;
-	}
-	
-	if (cls.demoplayback)
-		return;		// not really connected
-
-	if (Cmd_Argc() > 1)
-	{
-		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		SZ_Print (&cls.netchan.message, Cmd_Args());
-	}
-}
-#else
-void Cmd_ForwardToServer (void)
-{
-}
-#endif
 
 /*
 ============
@@ -662,11 +611,12 @@ A complete command line has been parsed, so try to execute it
 FIXME: lookupnoadd the token to speed search?
 ============
 */
-void	Cmd_ExecuteString (char *text)
+void	Cmd_ExecuteString (char *text, cmd_source_t src)
 {	
 	cmd_function_t	*cmd;
 	cmdalias_t		*a;
 
+	cmd_source = src;
 	Cmd_TokenizeString (text);
 			
 // execute the command line
@@ -678,10 +628,7 @@ void	Cmd_ExecuteString (char *text)
 	{
 		if (!Q_strcasecmp (cmd_argv[0],cmd->name))
 		{
-			if (!cmd->function)
-				Cmd_ForwardToServer ();
-			else
-				cmd->function ();
+			cmd->function ();
 			return;
 		}
 	}
@@ -697,11 +644,41 @@ void	Cmd_ExecuteString (char *text)
 	}
 	
 // check cvars
-	if (!Cvar_Command () && (cl_warncmd.value || developer.value))
+	if (!Cvar_Command ())
 		Con_Printf ("Unknown command \"%s\"\n", Cmd_Argv(0));
 	
 }
 
+
+/*
+===================
+Cmd_ForwardToServer
+
+Sends the entire command line over to the server
+===================
+*/
+void Cmd_ForwardToServer (void)
+{
+	if (cls.state != ca_connected)
+	{
+		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
+		return;
+	}
+	
+	if (cls.demoplayback)
+		return;		// not really connected
+
+	MSG_WriteByte (&cls.message, clc_stringcmd);
+	if (Q_strcasecmp(Cmd_Argv(0), "cmd") != 0)
+	{
+		SZ_Print (&cls.message, Cmd_Argv(0));
+		SZ_Print (&cls.message, " ");
+	}
+	if (Cmd_Argc() > 1)
+		SZ_Print (&cls.message, Cmd_Args());
+	else
+		SZ_Print (&cls.message, "\n");
+}
 
 
 /*
@@ -712,6 +689,7 @@ Returns the position (1 to argc-1) in the command's argument list
 where the given parameter apears, or 0 if not present
 ================
 */
+
 int Cmd_CheckParm (char *parm)
 {
 	int i;
@@ -725,24 +703,3 @@ int Cmd_CheckParm (char *parm)
 			
 	return 0;
 }
-
-/*
-============
-Cmd_Init
-============
-*/
-void Cmd_Init (void)
-{
-//
-// register our commands
-//
-	Cmd_AddCommand ("stuffcmds",Cmd_StuffCmds_f);
-	Cmd_AddCommand ("exec",Cmd_Exec_f);
-	Cmd_AddCommand ("echo",Cmd_Echo_f);
-	Cmd_AddCommand ("alias",Cmd_Alias_f);
-	Cmd_AddCommand ("wait", Cmd_Wait_f);
-#ifndef SERVERONLY
-	Cmd_AddCommand ("cmd", Cmd_ForwardToServer_f);
-#endif
-}
-

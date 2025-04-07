@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-#define	DYNAMIC_SIZE	0x20000
+#define	DYNAMIC_SIZE	0xc000
 
 #define	ZONEID	0x1d4a11
 #define MINFRAGMENT	64
@@ -410,12 +410,7 @@ void *Hunk_AllocName (int size, char *name)
 	size = sizeof(hunk_t) + ((size+15)&~15);
 	
 	if (hunk_size - hunk_low_used - hunk_high_used < size)
-//		Sys_Error ("Hunk_Alloc: failed on %i bytes",size);
-#ifdef _WIN32
-	  	Sys_Error ("Not enough RAM allocated.  Try starting using \"-heapsize 16000\" on the QuakeWorld command line.");
-#else
-	  	Sys_Error ("Not enough RAM allocated.  Try starting using \"-mem 16\" on the QuakeWorld command line.");
-#endif
+		Sys_Error ("Hunk_Alloc: failed on %i bytes",size);
 	
 	h = (hunk_t *)(hunk_base + hunk_low_used);
 	hunk_low_used += size;
@@ -934,7 +929,7 @@ void Memory_Init (void *buf, int size)
 		else
 			Sys_Error ("Memory_Init: you must specify a size in KB after -zone");
 	}
-	mainzone = Hunk_AllocName ( zonesize, "zone" );
+	mainzone = Hunk_AllocName (zonesize, "zone" );
 	Z_ClearZone (mainzone, zonesize);
 }
 

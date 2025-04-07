@@ -37,10 +37,7 @@ m*_t structures are in-memory
 #define	EF_MUZZLEFLASH 			2
 #define	EF_BRIGHTLIGHT 			4
 #define	EF_DIMLIGHT 			8
-#define	EF_FLAG1	 			16
-#define	EF_FLAG2	 			32
-#define EF_BLUE					64
-#define EF_RED					128
+
 
 /*
 ==============================================================================
@@ -97,7 +94,6 @@ typedef struct texture_s
 #define SURF_DRAWTILED		0x20
 #define SURF_DRAWBACKGROUND	0x40
 #define SURF_UNDERWATER		0x80
-#define SURF_DONTWARP		0x100
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct
@@ -314,6 +310,7 @@ typedef struct {
 	int					posedata;	// numposes*poseverts trivert_t
 	int					commands;	// gl command list with embedded s/t
 	int					gl_texturenum[MAX_SKINS][4];
+	int					texels[MAX_SKINS];	// only for player skins
 	maliasframedesc_t	frames[1];	// variable sized
 } aliashdr_t;
 
@@ -411,9 +408,6 @@ typedef struct model_s
 	byte		*visdata;
 	byte		*lightdata;
 	char		*entities;
-
-	unsigned	checksum;
-	unsigned	checksum2;
 
 //
 // additional model data

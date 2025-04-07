@@ -143,6 +143,7 @@ void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
 	byte		*lightmap;
 	unsigned	scale;
 	int			maps;
+	int			lightadj[4];
 	unsigned	*bl;
 
 	surf->cached_dlight = (surf->dlightframe == r_framecount);
@@ -153,7 +154,7 @@ void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
 	lightmap = surf->samples;
 
 // set to full bright if no light data
-	if (/* r_fullbright.value || */ !cl.worldmodel->lightdata)
+	if (r_fullbright.value || !cl.worldmodel->lightdata)
 	{
 		for (i=0 ; i<size ; i++)
 			blocklights[i] = 255*256;
@@ -275,10 +276,8 @@ extern	float	speedscale;		// for top sky and bottom sky
 void DrawGLWaterPoly (glpoly_t *p);
 void DrawGLWaterPolyLightmap (glpoly_t *p);
 
-#ifdef _WIN32
 lpMTexFUNC qglMTexCoord2fSGIS = NULL;
 lpSelTexFUNC qglSelectTextureSGIS = NULL;
-#endif
 
 qboolean mtexenabled = false;
 
@@ -302,7 +301,7 @@ void GL_EnableMultitexture(void)
 	}
 }
 
-#ifndef _WIN32
+#if 0
 /*
 ================
 R_DrawSequentialPoly
@@ -321,10 +320,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 	//
 	// normal lightmaped poly
 	//
-//	if ((!(s->flags & (SURF_DRAWSKY|SURF_DRAWTURB)))
-//		&& ((r_viewleaf->contents!=CONTENTS_EMPTY && (s->flags & SURF_UNDERWATER)) ||
-//		(r_viewleaf->contents==CONTENTS_EMPTY && !(s->flags & SURF_UNDERWATER))))
-	if (0)
+	if (! (s->flags & (SURF_DRAWSKY|SURF_DRAWTURB|SURF_UNDERWATER) ) )
 	{
 		p = s->polys;
 
@@ -598,6 +594,7 @@ void DrawGLWaterPoly (glpoly_t *p)
 {
 	int		i;
 	float	*v;
+	float	s, t, os, ot;
 	vec3_t	nv;
 
 	GL_DisableMultitexture();
@@ -621,6 +618,7 @@ void DrawGLWaterPolyLightmap (glpoly_t *p)
 {
 	int		i;
 	float	*v;
+	float	s, t, os, ot;
 	vec3_t	nv;
 
 	GL_DisableMultitexture();
@@ -673,10 +671,8 @@ void R_BlendLightmaps (void)
 	float		*v;
 	glRect_t	*theRect;
 
-#if 0
 	if (r_fullbright.value)
 		return;
-#endif
 	if (!gl_texsort.value)
 		return;
 
@@ -706,10 +702,6 @@ void R_BlendLightmaps (void)
 		{
 			lightmap_modified[i] = false;
 			theRect = &lightmap_rectchange[i];
-//			theRect->l = 0;
-//			theRect->t = 0;
-//			theRect->w = BLOCK_WIDTH;
-//			theRect->h = BLOCK_HEIGHT;
 //			glTexImage2D (GL_TEXTURE_2D, 0, lightmap_bytes
 //			, BLOCK_WIDTH, BLOCK_HEIGHT, 0, 
 //			gl_lightmap_format, GL_UNSIGNED_BYTE, lightmaps+i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes);
@@ -726,11 +718,7 @@ void R_BlendLightmaps (void)
 		}
 		for ( ; p ; p=p->chain)
 		{
-//			if (p->flags & SURF_UNDERWATER)
-//				DrawGLWaterPolyLightmap (p);
-			if (((r_viewleaf->contents==CONTENTS_EMPTY && (p->flags & SURF_UNDERWATER)) ||
-				(r_viewleaf->contents!=CONTENTS_EMPTY && !(p->flags & SURF_UNDERWATER)))
-				&& !(p->flags & SURF_DONTWARP))
+			if (p->flags & SURF_UNDERWATER)
 				DrawGLWaterPolyLightmap (p);
 			else
 			{
@@ -788,9 +776,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 		return;
 	}
 
-	if (((r_viewleaf->contents==CONTENTS_EMPTY && (fa->flags & SURF_UNDERWATER)) ||
-		(r_viewleaf->contents!=CONTENTS_EMPTY && !(fa->flags & SURF_UNDERWATER)))
-		&& !(fa->flags & SURF_DONTWARP))
+	if (fa->flags & SURF_UNDERWATER)
 		DrawGLWaterPoly (fa->polys);
 	else
 		DrawGLPoly (fa->polys);
@@ -845,6 +831,7 @@ Multitexture
 */
 void R_RenderDynamicLightmaps (msurface_t *fa)
 {
+	texture_t	*t;
 	byte		*base;
 	int			maps;
 	glRect_t    *theRect;
@@ -1087,9 +1074,9 @@ R_DrawBrushModel
 */
 void R_DrawBrushModel (entity_t *e)
 {
-	int			i;
-	int			k;
+	int			j, k;
 	vec3_t		mins, maxs;
+	int			i, numsurfaces;
 	msurface_t	*psurf;
 	float		dot;
 	mplane_t	*pplane;
@@ -1199,11 +1186,13 @@ R_RecursiveWorldNode
 */
 void R_RecursiveWorldNode (mnode_t *node)
 {
-	int			c, side;
+	int			i, c, side, *pindex;
+	vec3_t		acceptpt, rejectpt;
 	mplane_t	*plane;
 	msurface_t	*surf, **mark;
 	mleaf_t		*pleaf;
-	double		dot;
+	double		d, dot;
+	vec3_t		mins, maxs;
 
 	if (node->contents == CONTENTS_SOLID)
 		return;		// solid
@@ -1284,11 +1273,7 @@ void R_RecursiveWorldNode (mnode_t *node)
 					continue;
 
 				// don't backface underwater surfaces, because they warp
-//				if ( !(surf->flags & SURF_UNDERWATER) && ( (dot < 0) ^ !!(surf->flags & SURF_PLANEBACK)) )
-//					continue;		// wrong side
-				if ( !(((r_viewleaf->contents==CONTENTS_EMPTY && (surf->flags & SURF_UNDERWATER)) ||
-					(r_viewleaf->contents!=CONTENTS_EMPTY && !(surf->flags & SURF_UNDERWATER)))
-					&& !(surf->flags & SURF_DONTWARP)) && ( (dot < 0) ^ !!(surf->flags & SURF_PLANEBACK)) )
+				if ( !(surf->flags & SURF_UNDERWATER) && ( (dot < 0) ^ !!(surf->flags & SURF_PLANEBACK)) )
 					continue;		// wrong side
 
 				// if sorting by texture, just store it out
@@ -1328,6 +1313,7 @@ R_DrawWorld
 void R_DrawWorld (void)
 {
 	entity_t	ent;
+	int			i;
 
 	memset (&ent, 0, sizeof(ent));
 	ent.model = cl.worldmodel;
@@ -1345,7 +1331,7 @@ void R_DrawWorld (void)
 
 	R_RecursiveWorldNode (cl.worldmodel->nodes);
 
-		DrawTextureChains ();
+	DrawTextureChains ();
 
 	R_BlendLightmaps ();
 
@@ -1415,6 +1401,7 @@ int AllocBlock (int w, int h, int *x, int *y)
 {
 	int		i, j;
 	int		best, best2;
+	int		bestx;
 	int		texnum;
 
 	for (texnum=0 ; texnum<MAX_LIGHTMAPS ; texnum++)
@@ -1449,7 +1436,6 @@ int AllocBlock (int w, int h, int *x, int *y)
 	}
 
 	Sys_Error ("AllocBlock: full");
-	return 0;
 }
 
 
@@ -1465,9 +1451,14 @@ BuildSurfaceDisplayList
 */
 void BuildSurfaceDisplayList (msurface_t *fa)
 {
-	int			i, lindex, lnumverts;
+	int			i, lindex, lnumverts, s_axis, t_axis;
+	float		dist, lastdist, lzi, scale, u, v, frac;
+	unsigned	mask;
+	vec3_t		local, transformed;
 	medge_t		*pedges, *r_pedge;
-	int			vertpage;
+	mplane_t	*pplane;
+	int			vertpage, newverts, newpage, lastvert;
+	qboolean	visible;
 	float		*vec;
 	float		s, t;
 	glpoly_t	*poly;
@@ -1538,6 +1529,7 @@ void BuildSurfaceDisplayList (msurface_t *fa)
 		{
 			vec3_t v1, v2;
 			float *prev, *this, *next;
+			float f;
 
 			prev = poly->verts[(i + lnumverts - 1) % lnumverts];
 			this = poly->verts[i];
@@ -1579,7 +1571,7 @@ GL_CreateSurfaceLightmap
 */
 void GL_CreateSurfaceLightmap (msurface_t *surf)
 {
-	int		smax, tmax;
+	int		smax, tmax, s, t, l, i;
 	byte	*base;
 
 	if (surf->flags & (SURF_DRAWSKY|SURF_DRAWTURB))
@@ -1607,6 +1599,7 @@ void GL_BuildLightmaps (void)
 {
 	int		i, j;
 	model_t	*m;
+	extern qboolean isPermedia;
 
 	memset (allocated, 0, sizeof(allocated));
 
@@ -1619,6 +1612,10 @@ void GL_BuildLightmaps (void)
 	}
 
 	gl_lightmap_format = GL_LUMINANCE;
+	// default differently on the Permedia
+	if (isPermedia)
+		gl_lightmap_format = GL_RGBA;
+
 	if (COM_CheckParm ("-lm_1"))
 		gl_lightmap_format = GL_LUMINANCE;
 	if (COM_CheckParm ("-lm_a"))

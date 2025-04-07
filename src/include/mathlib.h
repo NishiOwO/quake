@@ -64,14 +64,12 @@ void R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4]);
 void FloorDivMod (double numer, double denom, int *quotient,
 		int *rem);
 fixed16_t Invert24To16(fixed16_t val);
-fixed16_t Mul16_30(fixed16_t multiplier, fixed16_t multiplicand);
 int GreatestCommonDivisor (int i1, int i2);
 
 void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct mplane_s *plane);
 float	anglemod(float a);
 
-void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees );
 
 
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)	\

@@ -23,8 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+#define GL_COLOR_INDEX8_EXT     0x80E5
+
 extern unsigned char d_15to8table[65536];
-extern cvar_t crosshair, cl_crossx, cl_crossy, crosshaircolor;
 
 cvar_t		gl_nobind = {"gl_nobind", "0"};
 cvar_t		gl_max_size = {"gl_max_size", "1024"};
@@ -36,19 +37,6 @@ qpic_t		*draw_backtile;
 
 int			translate_texture;
 int			char_texture;
-int			cs_texture; // crosshair texture
-
-static byte cs_data[64] = {
-	0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
-	0xfe, 0xff, 0xfe, 0xff, 0xfe, 0xff, 0xfe, 0xff,
-	0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
-};
-
 
 typedef struct
 {
@@ -81,6 +69,7 @@ typedef struct
 gltexture_t	gltextures[MAX_GLTEXTURES];
 int			numgltextures;
 
+
 void GL_Bind (int texnum)
 {
 	if (gl_nobind.value)
@@ -91,7 +80,7 @@ void GL_Bind (int texnum)
 #ifdef _WIN32
 	bindTexFunc (GL_TEXTURE_2D, texnum);
 #else
-	glBindTexture (GL_TEXTURE_2D, texnum);
+	glBindTexture(GL_TEXTURE_2D, texnum);
 #endif
 }
 
@@ -107,7 +96,7 @@ void GL_Bind (int texnum)
 =============================================================================
 */
 
-#define	MAX_SCRAPS		1
+#define	MAX_SCRAPS		2
 #define	BLOCK_WIDTH		256
 #define	BLOCK_HEIGHT	256
 
@@ -121,6 +110,7 @@ int Scrap_AllocBlock (int w, int h, int *x, int *y)
 {
 	int		i, j;
 	int		best, best2;
+	int		bestx;
 	int		texnum;
 
 	for (texnum=0 ; texnum<MAX_SCRAPS ; texnum++)
@@ -155,16 +145,20 @@ int Scrap_AllocBlock (int w, int h, int *x, int *y)
 	}
 
 	Sys_Error ("Scrap_AllocBlock: full");
-	return 0;
 }
 
 int	scrap_uploads;
 
 void Scrap_Upload (void)
 {
+	int		texnum;
+
 	scrap_uploads++;
-	GL_Bind(scrap_texnum);
-	GL_Upload8 (scrap_texels[0], BLOCK_WIDTH, BLOCK_HEIGHT, false, true);
+
+	for (texnum=0 ; texnum<MAX_SCRAPS ; texnum++) {
+		GL_Bind(scrap_texnum + texnum);
+		GL_Upload8 (scrap_texels[texnum], BLOCK_WIDTH, BLOCK_HEIGHT, false, true);
+	}
 	scrap_dirty = false;
 }
 
@@ -375,12 +369,14 @@ void Draw_Init (void)
 {
 	int		i;
 	qpic_t	*cb;
-	byte	*dest;
-	int		x;
+	byte	*dest, *src;
+	int		x, y;
 	char	ver[40];
 	glpic_t	*gl;
-	int start;
-	byte    *ncdata;
+	int		start;
+	byte	*ncdata;
+	int		f, fstep;
+
 
 	Cvar_RegisterVariable (&gl_nobind);
 	Cvar_RegisterVariable (&gl_max_size);
@@ -388,7 +384,7 @@ void Draw_Init (void)
 
 	// 3dfx can only handle 256 wide textures
 	if (!Q_strncasecmp ((char *)gl_renderer, "3dfx",4) ||
-		!Q_strncasecmp ((char *)gl_renderer, "Mesa",4))
+		strstr((char *)gl_renderer, "Glide"))
 		Cvar_Set ("gl_max_size", "256");
 
 	Cmd_AddCommand ("gl_texturemode", &Draw_TextureMode_f);
@@ -404,56 +400,60 @@ void Draw_Init (void)
 
 	// now turn them into textures
 	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false, true);
-//	Draw_CrosshairAdjust();
-	cs_texture = GL_LoadTexture ("crosshair", 8, 8, cs_data, false, true);
 
-	start = Hunk_LowMark ();
+	start = Hunk_LowMark();
 
-	cb = (qpic_t *)COM_LoadHunkFile ("gfx/conback.lmp");	
+	cb = (qpic_t *)COM_LoadTempFile ("gfx/conback.lmp");	
 	if (!cb)
 		Sys_Error ("Couldn't load gfx/conback.lmp");
 	SwapPic (cb);
 
-	sprintf (ver, "%4.2f", VERSION);
-	dest = cb->data + 320 + 320*186 - 11 - 8*strlen(ver);
-	for (x=0 ; x<strlen(ver) ; x++)
+	// hack the version number directly into the pic
+#if defined(__linux__)
+	sprintf (ver, "(Linux %2.2f, gl %4.2f) %4.2f", (float)LINUX_VERSION, (float)GLQUAKE_VERSION, (float)VERSION);
+#else
+	sprintf (ver, "(gl %4.2f) %4.2f", (float)GLQUAKE_VERSION, (float)VERSION);
+#endif
+	dest = cb->data + 320*186 + 320 - 11 - 8*strlen(ver);
+	y = strlen(ver);
+	for (x=0 ; x<y ; x++)
 		Draw_CharToConback (ver[x], dest+(x<<3));
 
 #if 0
 	conback->width = vid.conwidth;
 	conback->height = vid.conheight;
 
-	// scale console to vid size
-	dest = ncdata = Hunk_AllocName(vid.conwidth * vid.conheight, "conback");
-
-	for (y=0 ; y<vid.conheight ; y++, dest += vid.conwidth)
-	{
-		src = cb->data + cb->width * (y*cb->height/vid.conheight);
-		if (vid.conwidth == cb->width)
-			memcpy (dest, src, vid.conwidth);
-		else
-		{
-			f = 0;
-			fstep = cb->width*0x10000/vid.conwidth;
-			for (x=0 ; x<vid.conwidth ; x+=4)
-			{
-				dest[x] = src[f>>16];
-				f += fstep;
-				dest[x+1] = src[f>>16];
-				f += fstep;
-				dest[x+2] = src[f>>16];
-				f += fstep;
-				dest[x+3] = src[f>>16];
-				f += fstep;
-			}
-		}
-	}
+ 	// scale console to vid size
+ 	dest = ncdata = Hunk_AllocName(vid.conwidth * vid.conheight, "conback");
+ 
+ 	for (y=0 ; y<vid.conheight ; y++, dest += vid.conwidth)
+ 	{
+ 		src = cb->data + cb->width * (y*cb->height/vid.conheight);
+ 		if (vid.conwidth == cb->width)
+ 			memcpy (dest, src, vid.conwidth);
+ 		else
+ 		{
+ 			f = 0;
+ 			fstep = cb->width*0x10000/vid.conwidth;
+ 			for (x=0 ; x<vid.conwidth ; x+=4)
+ 			{
+ 				dest[x] = src[f>>16];
+ 				f += fstep;
+ 				dest[x+1] = src[f>>16];
+ 				f += fstep;
+ 				dest[x+2] = src[f>>16];
+ 				f += fstep;
+ 				dest[x+3] = src[f>>16];
+ 				f += fstep;
+ 			}
+ 		}
+ 	}
 #else
 	conback->width = cb->width;
 	conback->height = cb->height;
 	ncdata = cb->data;
 #endif
-	
+
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -463,11 +463,11 @@ void Draw_Init (void)
 	gl->sh = 1;
 	gl->tl = 0;
 	gl->th = 1;
-	conback->width = vid.conwidth;
-	conback->height = vid.conheight;
+	conback->width = vid.width;
+	conback->height = vid.height;
 
 	// free loaded console
-	Hunk_FreeToLowMark (start);
+	Hunk_FreeToLowMark(start);
 
 	// save a texture slot for translated picture
 	translate_texture = texture_extension_number++;
@@ -496,6 +496,10 @@ smoothly scrolled off.
 */
 void Draw_Character (int x, int y, int num)
 {
+	byte			*dest;
+	byte			*source;
+	unsigned short	*pusdest;
+	int				drawline;	
 	int				row, col;
 	float			frow, fcol, size;
 
@@ -545,55 +549,6 @@ void Draw_String (int x, int y, char *str)
 
 /*
 ================
-Draw_Alt_String
-================
-*/
-void Draw_Alt_String (int x, int y, char *str)
-{
-	while (*str)
-	{
-		Draw_Character (x, y, (*str) | 0x80);
-		str++;
-		x += 8;
-	}
-}
-
-void Draw_Crosshair(void)
-{
-	int x, y;
-	extern vrect_t		scr_vrect;
-	unsigned char *pColor;
-
-	if (crosshair.value == 2) {
-		x = scr_vrect.x + scr_vrect.width/2 - 3 + cl_crossx.value; 
-		y = scr_vrect.y + scr_vrect.height/2 - 3 + cl_crossy.value;
-
-		glTexEnvf ( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-		pColor = (unsigned char *) &d_8to24table[(byte) crosshaircolor.value];
-		glColor4ubv ( pColor );
-		GL_Bind (cs_texture);
-
-		glBegin (GL_QUADS);
-		glTexCoord2f (0, 0);
-		glVertex2f (x - 4, y - 4);
-		glTexCoord2f (1, 0);
-		glVertex2f (x+12, y-4);
-		glTexCoord2f (1, 1);
-		glVertex2f (x+12, y+12);
-		glTexCoord2f (0, 1);
-		glVertex2f (x - 4, y+12);
-		glEnd ();
-		
-		glTexEnvf ( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
-	} else if (crosshair.value)
-		Draw_Character (scr_vrect.x + scr_vrect.width/2-4 + cl_crossx.value, 
-			scr_vrect.y + scr_vrect.height/2-4 + cl_crossy.value, 
-			'+');
-}
-
-
-/*
-================
 Draw_DebugChar
 
 Draws a single character directly to the upper right corner of the screen.
@@ -607,37 +562,14 @@ void Draw_DebugChar (char num)
 
 /*
 =============
-Draw_Pic
-=============
-*/
-void Draw_Pic (int x, int y, qpic_t *pic)
-{
-	glpic_t			*gl;
-
-	if (scrap_dirty)
-		Scrap_Upload ();
-	gl = (glpic_t *)pic->data;
-	glColor4f (1,1,1,1);
-	GL_Bind (gl->texnum);
-	glBegin (GL_QUADS);
-	glTexCoord2f (gl->sl, gl->tl);
-	glVertex2f (x, y);
-	glTexCoord2f (gl->sh, gl->tl);
-	glVertex2f (x+pic->width, y);
-	glTexCoord2f (gl->sh, gl->th);
-	glVertex2f (x+pic->width, y+pic->height);
-	glTexCoord2f (gl->sl, gl->th);
-	glVertex2f (x, y+pic->height);
-	glEnd ();
-}
-
-/*
-=============
 Draw_AlphaPic
 =============
 */
 void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
 {
+	byte			*dest, *source;
+	unsigned short	*pusdest;
+	int				v, u;
 	glpic_t			*gl;
 
 	if (scrap_dirty)
@@ -646,7 +578,7 @@ void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
 	glDisable(GL_ALPHA_TEST);
 	glEnable (GL_BLEND);
 //	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glCullFace(GL_FRONT);
+//	glCullFace(GL_FRONT);
 	glColor4f (1,1,1,alpha);
 	GL_Bind (gl->texnum);
 	glBegin (GL_QUADS);
@@ -664,38 +596,36 @@ void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
 	glDisable (GL_BLEND);
 }
 
-void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height)
+
+/*
+=============
+Draw_Pic
+=============
+*/
+void Draw_Pic (int x, int y, qpic_t *pic)
 {
+	byte			*dest, *source;
+	unsigned short	*pusdest;
+	int				v, u;
 	glpic_t			*gl;
-	float newsl, newtl, newsh, newth;
-	float oldglwidth, oldglheight;
 
 	if (scrap_dirty)
 		Scrap_Upload ();
 	gl = (glpic_t *)pic->data;
-	
-	oldglwidth = gl->sh - gl->sl;
-	oldglheight = gl->th - gl->tl;
-
-	newsl = gl->sl + (srcx*oldglwidth)/pic->width;
-	newsh = newsl + (width*oldglwidth)/pic->width;
-
-	newtl = gl->tl + (srcy*oldglheight)/pic->height;
-	newth = newtl + (height*oldglheight)/pic->height;
-	
 	glColor4f (1,1,1,1);
 	GL_Bind (gl->texnum);
 	glBegin (GL_QUADS);
-	glTexCoord2f (newsl, newtl);
+	glTexCoord2f (gl->sl, gl->tl);
 	glVertex2f (x, y);
-	glTexCoord2f (newsh, newtl);
-	glVertex2f (x+width, y);
-	glTexCoord2f (newsh, newth);
-	glVertex2f (x+width, y+height);
-	glTexCoord2f (newsl, newth);
-	glVertex2f (x, y+height);
+	glTexCoord2f (gl->sh, gl->tl);
+	glVertex2f (x+pic->width, y);
+	glTexCoord2f (gl->sh, gl->th);
+	glVertex2f (x+pic->width, y+pic->height);
+	glTexCoord2f (gl->sl, gl->th);
+	glVertex2f (x, y+pic->height);
 	glEnd ();
 }
+
 
 /*
 =============
@@ -704,6 +634,9 @@ Draw_TransPic
 */
 void Draw_TransPic (int x, int y, qpic_t *pic)
 {
+	byte	*dest, *source, tbyte;
+	unsigned short	*pusdest;
+	int				v, u;
 
 	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 ||
 		 (unsigned)(y + pic->height) > vid.height)
@@ -774,29 +707,12 @@ Draw_ConsoleBackground
 */
 void Draw_ConsoleBackground (int lines)
 {
-	char ver[80];
-	int x, i;
-	int y;
+	int y = (vid.height * 3) >> 2;
 
-	y = (vid.height * 3) >> 2;
 	if (lines > y)
-		Draw_Pic(0, lines-vid.height, conback);
+		Draw_Pic(0, lines - vid.height, conback);
 	else
 		Draw_AlphaPic (0, lines - vid.height, conback, (float)(1.2 * lines)/y);
-
-	// hack the version number directly into the pic
-//	y = lines-186;
-	y = lines-14;
-	if (!cls.download) {
-#ifdef __linux__
-		sprintf (ver, "LinuxGL (%4.2f) QuakeWorld", LINUX_VERSION);
-#else
-		sprintf (ver, "GL (%4.2f) QuakeWorld", GLQUAKE_VERSION);
-#endif
-		x = vid.conwidth - (strlen(ver)*8 + 11) - (vid.conwidth*8/320)*7;
-		for (i=0 ; i<strlen(ver) ; i++)
-			Draw_Character (x + i * 8, y, ver[i] | 0x80);
-	}
 }
 
 
@@ -1018,6 +934,7 @@ void GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight, unsig
 	}
 }
 
+
 /*
 ================
 GL_MipMap
@@ -1055,19 +972,20 @@ Mipping for 8 bit textures
 void GL_MipMap8Bit (byte *in, int width, int height)
 {
 	int		i, j;
-	byte	*out;
 	unsigned short     r,g,b;
-	byte	*at1, *at2, *at3, *at4;
+	byte	*out, *at1, *at2, *at3, *at4;
 
+//	width <<=2;
 	height >>= 1;
 	out = in;
 	for (i=0 ; i<height ; i++, in+=width)
+	{
 		for (j=0 ; j<width ; j+=2, out+=1, in+=2)
 		{
-			at1 = (byte *) &d_8to24table[in[0]];
-			at2 = (byte *) &d_8to24table[in[1]];
-			at3 = (byte *) &d_8to24table[in[width+0]];
-			at4 = (byte *) &d_8to24table[in[width+1]];
+			at1 = (byte *) (d_8to24table + in[0]);
+			at2 = (byte *) (d_8to24table + in[1]);
+			at3 = (byte *) (d_8to24table + in[width+0]);
+			at4 = (byte *) (d_8to24table + in[width+1]);
 
  			r = (at1[0]+at2[0]+at3[0]+at4[0]); r>>=5;
  			g = (at1[1]+at2[1]+at3[1]+at4[1]); g>>=5;
@@ -1075,6 +993,7 @@ void GL_MipMap8Bit (byte *in, int width, int height)
 
 			out[0] = d_15to8table[(r<<0) + (g<<5) + (b<<10)];
 		}
+	}
 }
 
 /*
@@ -1171,6 +1090,8 @@ void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboole
 {
 	int			i, s;
 	qboolean	noalpha;
+	int			p;
+	static unsigned j;
 	int			samples;
     static	unsigned char scaled[1024*512];	// [512*256];
 	int			scaled_width, scaled_height;
@@ -1243,6 +1164,7 @@ void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboole
 	}
 done: ;
 
+
 	if (mipmap)
 	{
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
@@ -1254,8 +1176,6 @@ done: ;
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	}
 }
-
-extern qboolean VID_Is8bit();
 
 /*
 ===============
@@ -1299,11 +1219,10 @@ static	unsigned	trans[640*480];		// FIXME, temporary
 		}
 	}
 
-	if (VID_Is8bit() && !alpha && (data!=scrap_texels[0])) {
-		GL_Upload8_EXT (data, width, height, mipmap, alpha);
-		return;
+ 	if (VID_Is8bit() && !alpha && (data!=scrap_texels[0])) {
+ 		GL_Upload8_EXT (data, width, height, mipmap, alpha);
+ 		return;
 	}
-
 	GL_Upload32 (trans, width, height, mipmap, alpha);
 }
 
@@ -1314,7 +1233,8 @@ GL_LoadTexture
 */
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha)
 {
-	int			i;
+	qboolean	noalpha;
+	int			i, p, s;
 	gltexture_t	*glt;
 
 	// see if the texture is allready present
@@ -1330,9 +1250,10 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 			}
 		}
 	}
-	else
+	else {
 		glt = &gltextures[numgltextures];
-	numgltextures++;
+		numgltextures++;
+	}
 
 	strcpy (glt->identifier, identifier);
 	glt->texnum = texture_extension_number;
@@ -1367,9 +1288,7 @@ void GL_SelectTexture (GLenum target)
 {
 	if (!gl_mtexable)
 		return;
-#ifndef __linux__ // no multitexture under Linux yet
 	qglSelectTextureSGIS(target);
-#endif
 	if (target == oldtarget) 
 		return;
 	cnttextures[oldtarget-TEXTURE0_SGIS] = currenttexture;

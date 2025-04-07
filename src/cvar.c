@@ -19,11 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // cvar.c -- dynamic variable tracking
 
-#ifdef SERVERONLY 
-#include "qwsvdef.h"
-#else
 #include "quakedef.h"
-#endif
 
 cvar_t	*cvar_vars;
 char	*cvar_null_string = "";
@@ -91,12 +87,7 @@ char *Cvar_CompleteVariable (char *partial)
 	if (!len)
 		return NULL;
 		
-	// check exact match
-	for (cvar=cvar_vars ; cvar ; cvar=cvar->next)
-		if (!strcmp (partial,cvar->name))
-			return cvar->name;
-
-	// check partial match
+// check functions
 	for (cvar=cvar_vars ; cvar ; cvar=cvar->next)
 		if (!Q_strncmp (partial,cvar->name, len))
 			return cvar->name;
@@ -104,10 +95,6 @@ char *Cvar_CompleteVariable (char *partial)
 	return NULL;
 }
 
-
-#ifdef SERVERONLY
-void SV_SendServerInfoChange(char *key, char *value);
-#endif
 
 /*
 ============
@@ -117,6 +104,7 @@ Cvar_Set
 void Cvar_Set (char *var_name, char *value)
 {
 	cvar_t	*var;
+	qboolean changed;
 	
 	var = Cvar_FindVar (var_name);
 	if (!var)
@@ -125,30 +113,18 @@ void Cvar_Set (char *var_name, char *value)
 		return;
 	}
 
-#ifdef SERVERONLY
-	if (var->info)
-	{
-		Info_SetValueForKey (svs.info, var_name, value, MAX_SERVERINFO_STRING);
-		SV_SendServerInfoChange(var_name, value);
-//		SV_BroadcastCommand ("fullserverinfo \"%s\"\n", svs.info);
-	}
-#else
-	if (var->info)
-	{
-		Info_SetValueForKey (cls.userinfo, var_name, value, MAX_INFO_STRING);
-		if (cls.state >= ca_connected)
-		{
-			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-			SZ_Print (&cls.netchan.message, va("setinfo \"%s\" \"%s\"\n", var_name, value));
-		}
-	}
-#endif
+	changed = Q_strcmp(var->string, value);
 	
 	Z_Free (var->string);	// free the old value string
 	
 	var->string = Z_Malloc (Q_strlen(value)+1);
 	Q_strcpy (var->string, value);
 	var->value = Q_atof (var->string);
+	if (var->server && changed)
+	{
+		if (sv.active)
+			SV_BroadcastPrintf ("\"%s\" changed to \"%s\"\n", var->name, var->string);
+	}
 }
 
 /*
@@ -174,8 +150,8 @@ Adds a freestanding variable to the variable list.
 */
 void Cvar_RegisterVariable (cvar_t *variable)
 {
-	char	value[512];
-
+	char	*oldstr;
+	
 // first check to see if it has allready been defined
 	if (Cvar_FindVar (variable->name))
 	{
@@ -190,16 +166,15 @@ void Cvar_RegisterVariable (cvar_t *variable)
 		return;
 	}
 		
+// copy the value off, because future sets will Z_Free it
+	oldstr = variable->string;
+	variable->string = Z_Malloc (Q_strlen(variable->string)+1);	
+	Q_strcpy (variable->string, oldstr);
+	variable->value = Q_atof (variable->string);
+	
 // link the variable in
 	variable->next = cvar_vars;
 	cvar_vars = variable;
-
-// copy the value off, because future sets will Z_Free it
-	strcpy (value, variable->string);
-	variable->string = Z_Malloc (1);	
-	
-// set it through the function to be consistant
-	Cvar_Set (variable->name, value);
 }
 
 /*

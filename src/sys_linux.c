@@ -1,22 +1,3 @@
-/*
-Copyright (C) 1996-1997 Id Software, Inc.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-*/
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -38,7 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-int noconinput = 0;
+qboolean			isDedicated;
+
 int nostdout = 0;
 
 char *basedir = ".";
@@ -75,8 +57,8 @@ void Sys_Printf (char *fmt, ...)
     char        text[1024], *t_p;
     int         l, r;
 
-    if (nostdout)
-        return;
+	if (nostdout)
+		return;
 
     va_start (argptr,fmt);
     vsprintf (text,fmt,argptr);
@@ -104,7 +86,7 @@ void Sys_Printf (char *fmt, ...)
 void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
-	char		text[2048];
+	char		text[1024];
 	unsigned char		*p;
 
 	va_start (argptr,fmt);
@@ -117,17 +99,33 @@ void Sys_Printf (char *fmt, ...)
     if (nostdout)
         return;
 
-	for (p = (unsigned char *)text; *p; p++)
+	for (p = (unsigned char *)text; *p; p++) {
+		*p &= 0x7f;
 		if ((*p > 128 || *p < 32) && *p != 10 && *p != 13 && *p != 9)
 			printf("[%02x]", *p);
 		else
 			putc(*p, stdout);
+	}
 }
 
+#if 0
+static char end1[] =
+"\x1b[?7h\x1b[40m\x1b[2J\x1b[0;1;41m\x1b[1;1H                QUAKE: The Doomed Dimension \x1b[33mby \x1b[44mid\x1b[41m Software                      \x1b[2;1H  ----------------------------------------------------------------------------  \x1b[3;1H           CALL 1-800-IDGAMES TO ORDER OR FOR TECHNICAL SUPPORT                 \x1b[4;1H             PRICE: $45.00 (PRICES MAY VARY OUTSIDE THE US.)                    \x1b[5;1H                                                                                \x1b[6;1H  \x1b[37mYes! You only have one fourth of this incredible epic. That is because most   \x1b[7;1H   of you have paid us nothing or at most, very little. You could steal the     \x1b[8;1H   game from a friend. But we both know you'll be punished by God if you do.    \x1b[9;1H        \x1b[33mWHY RISK ETERNAL DAMNATION? CALL 1-800-IDGAMES AND BUY NOW!             \x1b[10;1H             \x1b[37mRemember, we love you almost as much as He does.                   \x1b[11;1H                                                                                \x1b[12;1H            \x1b[33mProgramming: \x1b[37mJohn Carmack, Michael Abrash, John Cash                \x1b[13;1H       \x1b[33mDesign: \x1b[37mJohn Romero, Sandy Petersen, American McGee, Tim Willits         \x1b[14;1H                     \x1b[33mArt: \x1b[37mAdrian Carmack, Kevin Cloud                           \x1b[15;1H               \x1b[33mBiz: \x1b[37mJay Wilbur, Mike Wilson, Donna Jackson                      \x1b[16;1H            \x1b[33mProjects: \x1b[37mShawn Green   \x1b[33mSupport: \x1b[37mBarrett Alexander                  \x1b[17;1H              \x1b[33mSound Effects: \x1b[37mTrent Reznor and Nine Inch Nails                   \x1b[18;1H  For other information or details on ordering outside the US, check out the    \x1b[19;1H     files accompanying QUAKE or our website at http://www.idsoftware.com.      \x1b[20;1H    \x1b[0;41mQuake is a trademark of Id Software, inc., (c)1996 Id Software, inc.        \x1b[21;1H     All rights reserved. NIN logo is a registered trademark licensed to        \x1b[22;1H                 Nothing Interactive, Inc. All rights reserved.                 \x1b[40m\x1b[23;1H\x1b[0m";
+static char end2[] =
+"\x1b[?7h\x1b[40m\x1b[2J\x1b[0;1;41m\x1b[1;1H        QUAKE \x1b[33mby \x1b[44mid\x1b[41m Software                                                    \x1b[2;1H -----------------------------------------------------------------------------  \x1b[3;1H        \x1b[37mWhy did you quit from the registered version of QUAKE? Did the          \x1b[4;1H        scary monsters frighten you? Or did Mr. Sandman tug at your             \x1b[5;1H        little lids? No matter! What is important is you love our               \x1b[6;1H        game, and gave us your money. Congratulations, you are probably         \x1b[7;1H        not a thief.                                                            \x1b[8;1H                                                           Thank You.           \x1b[9;1H        \x1b[33;44mid\x1b[41m Software is:                                                         \x1b[10;1H        PROGRAMMING: \x1b[37mJohn Carmack, Michael Abrash, John Cash                    \x1b[11;1H        \x1b[33mDESIGN: \x1b[37mJohn Romero, Sandy Petersen, American McGee, Tim Willits        \x1b[12;1H        \x1b[33mART: \x1b[37mAdrian Carmack, Kevin Cloud                                        \x1b[13;1H        \x1b[33mBIZ: \x1b[37mJay Wilbur, Mike Wilson     \x1b[33mPROJECTS MAN: \x1b[37mShawn Green              \x1b[14;1H        \x1b[33mBIZ ASSIST: \x1b[37mDonna Jackson        \x1b[33mSUPPORT: \x1b[37mBarrett Alexander             \x1b[15;1H        \x1b[33mSOUND EFFECTS AND MUSIC: \x1b[37mTrent Reznor and Nine Inch Nails               \x1b[16;1H                                                                                \x1b[17;1H        If you need help running QUAKE refer to the text files in the           \x1b[18;1H        QUAKE directory, or our website at http://www.idsoftware.com.           \x1b[19;1H        If all else fails, call our technical support at 1-800-IDGAMES.         \x1b[20;1H      \x1b[0;41mQuake is a trademark of Id Software, inc., (c)1996 Id Software, inc.      \x1b[21;1H        All rights reserved. NIN logo is a registered trademark licensed        \x1b[22;1H             to Nothing Interactive, Inc. All rights reserved.                  \x1b[23;1H\x1b[40m\x1b[0m";
+
+#endif
 void Sys_Quit (void)
 {
 	Host_Shutdown();
     fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
+#if 0
+	if (registered.value)
+		printf("%s", end2);
+	else
+		printf("%s", end1);
+#endif
+	fflush(stdout);
 	exit(0);
 }
 
@@ -280,7 +278,7 @@ void Sys_EditFile(char *filename)
 
 }
 
-double Sys_DoubleTime (void)
+double Sys_FloatTime (void)
 {
     struct timeval tp;
     struct timezone tzp; 
@@ -320,11 +318,19 @@ void floating_point_exception_handler(int whatever)
 
 char *Sys_ConsoleInput(void)
 {
-#if 0
     static char text[256];
     int     len;
+	fd_set	fdset;
+    struct timeval timeout;
 
 	if (cls.state == ca_dedicated) {
+		FD_ZERO(&fdset);
+		FD_SET(0, &fdset); // stdin
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 0;
+		if (select (1, &fdset, NULL, NULL, &timeout) == -1 || !FD_ISSET(0, &fdset))
+			return NULL;
+
 		len = read (0, text, sizeof(text));
 		if (len < 1)
 			return NULL;
@@ -332,7 +338,6 @@ char *Sys_ConsoleInput(void)
 
 		return text;
 	}
-#endif
 	return NULL;
 }
 
@@ -346,13 +351,13 @@ void Sys_LowFPPrecision (void)
 }
 #endif
 
-int		skipframes;
-
 int main (int c, char **v)
 {
 
 	double		time, oldtime, newtime;
 	quakeparms_t parms;
+	extern int vcrFile;
+	extern int recording;
 	int j;
 
 //	static char cwd[1024];
@@ -366,7 +371,11 @@ int main (int c, char **v)
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
+#ifdef GLQUAKE
 	parms.memsize = 16*1024*1024;
+#else
+	parms.memsize = 8*1024*1024;
+#endif
 
 	j = COM_CheckParm("-mem");
 	if (j)
@@ -377,26 +386,46 @@ int main (int c, char **v)
 // caching is disabled by default, use -cachedir to enable
 //	parms.cachedir = cachedir;
 
-	noconinput = COM_CheckParm("-noconinput");
-	if (!noconinput)
-		fcntl(0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
-
-	if (COM_CheckParm("-nostdout"))
-		nostdout = 1;
-
-	Sys_Init();
+	fcntl(0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
 
     Host_Init(&parms);
 
-    oldtime = Sys_DoubleTime ();
+	Sys_Init();
+
+	if (COM_CheckParm("-nostdout"))
+		nostdout = 1;
+	else {
+		fcntl(0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
+		printf ("Linux Quake -- Version %0.3f\n", LINUX_VERSION);
+	}
+
+    oldtime = Sys_FloatTime () - 0.1;
     while (1)
     {
 // find time spent rendering last frame
-        newtime = Sys_DoubleTime ();
+        newtime = Sys_FloatTime ();
         time = newtime - oldtime;
 
-		Host_Frame(time);
-		oldtime = newtime;
+        if (cls.state == ca_dedicated)
+        {   // play vcrfiles at max speed
+            if (time < sys_ticrate.value && (vcrFile == -1 || recording) )
+            {
+				usleep(1);
+                continue;       // not time to run a server only tic yet
+            }
+            time = sys_ticrate.value;
+        }
+
+        if (time > sys_ticrate.value*2)
+            oldtime = newtime;
+        else
+            oldtime += time;
+
+        Host_Frame (time);
+
+// graphic debugging aids
+        if (sys_linerefresh.value)
+            Sys_LineRefresh ();
     }
 
 }

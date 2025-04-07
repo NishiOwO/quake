@@ -31,17 +31,6 @@ m*_t structures are in-memory
 
 */
 
-// entity effects
-
-#define	EF_BRIGHTFIELD			1
-#define	EF_MUZZLEFLASH 			2
-#define	EF_BRIGHTLIGHT 			4
-#define	EF_DIMLIGHT 			8
-#define	EF_FLAG1	 			16
-#define	EF_FLAG2	 			32
-#define EF_BLUE					64
-#define EF_RED					128
-
 /*
 ==============================================================================
 
@@ -168,7 +157,7 @@ typedef struct mleaf_s
 
 // leaf specific
 	byte		*compressed_vis;
-	struct efrag_s	*efrags;
+	efrag_t		*efrags;
 
 	msurface_t	**firstmarksurface;
 	int			nummarksurfaces;
@@ -320,16 +309,10 @@ typedef struct model_s
 	int			flags;
 
 //
-// volume occupied by the model graphics
+// volume occupied by the model
 //		
 	vec3_t		mins, maxs;
 	float		radius;
-
-//
-// solid volume for clipping (sent from server)
-//
-	qboolean	clipbox;
-	vec3_t		clipmins, clipmaxs;
 
 //
 // brush model
@@ -377,9 +360,6 @@ typedef struct model_s
 	byte		*visdata;
 	byte		*lightdata;
 	char		*entities;
-
-	unsigned	checksum;		// for world models only
-	unsigned	checksum2;		// for world models only
 
 //
 // additional model data

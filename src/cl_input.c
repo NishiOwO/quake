@@ -19,9 +19,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // cl.input.c  -- builds an intended movement command to send to the server
 
-#include "quakedef.h"
+// Quake is a trademark of Id Software, Inc., (c) 1996 Id Software, Inc. All
+// rights reserved.
 
-cvar_t	cl_nodelta = {"cl_nodelta","0"};
+#include "quakedef.h"
 
 /*
 ===============================================================================
@@ -58,7 +59,7 @@ void KeyDown (kbutton_t *b)
 {
 	int		k;
 	char	*c;
-	
+
 	c = Cmd_Argv(1);
 	if (c[0])
 		k = atoi(c);
@@ -281,11 +282,13 @@ Send the intended movement message to the server
 */
 void CL_BaseMove (usercmd_t *cmd)
 {	
+	if (cls.signon != SIGNONS)
+		return;
+			
 	CL_AdjustAngles ();
 	
-	memset (cmd, 0, sizeof(*cmd));
+	Q_memset (cmd, 0, sizeof(*cmd));
 	
-	VectorCopy (cl.viewangles, cmd->angles);
 	if (in_strafe.state & 1)
 	{
 		cmd->sidemove += cl_sidespeed.value * CL_KeyState (&in_right);
@@ -312,28 +315,77 @@ void CL_BaseMove (usercmd_t *cmd)
 		cmd->forwardmove *= cl_movespeedkey.value;
 		cmd->sidemove *= cl_movespeedkey.value;
 		cmd->upmove *= cl_movespeedkey.value;
-	}	
+	}
+
+#ifdef QUAKE2
+	cmd->lightlevel = cl.light_level;
+#endif
 }
 
-int MakeChar (int i)
-{
-	i &= ~3;
-	if (i < -127*4)
-		i = -127*4;
-	if (i > 127*4)
-		i = 127*4;
-	return i;
-}
+
 
 /*
 ==============
-CL_FinishMove
+CL_SendMove
 ==============
 */
-void CL_FinishMove (usercmd_t *cmd)
+void CL_SendMove (usercmd_t *cmd)
 {
 	int		i;
-	int		ms;
+	int		bits;
+	sizebuf_t	buf;
+	byte	data[128];
+	
+	buf.maxsize = 128;
+	buf.cursize = 0;
+	buf.data = data;
+	
+	cl.cmd = *cmd;
+
+//
+// send the movement message
+//
+    MSG_WriteByte (&buf, clc_move);
+
+	MSG_WriteFloat (&buf, cl.mtime[0]);	// so server can get ping times
+
+	for (i=0 ; i<3 ; i++)
+		MSG_WriteAngle (&buf, cl.viewangles[i]);
+	
+    MSG_WriteShort (&buf, cmd->forwardmove);
+    MSG_WriteShort (&buf, cmd->sidemove);
+    MSG_WriteShort (&buf, cmd->upmove);
+
+//
+// send button bits
+//
+	bits = 0;
+	
+	if ( in_attack.state & 3 )
+		bits |= 1;
+	in_attack.state &= ~2;
+	
+	if (in_jump.state & 3)
+		bits |= 2;
+	in_jump.state &= ~2;
+	
+    MSG_WriteByte (&buf, bits);
+
+    MSG_WriteByte (&buf, in_impulse);
+	in_impulse = 0;
+
+#ifdef QUAKE2
+//
+// light level
+//
+	MSG_WriteByte (&buf, cmd->lightlevel);
+#endif
+
+//
+// deliver the message
+//
+	if (cls.demoplayback)
+		return;
 
 //
 // allways dump the first two message, because it may contain leftover inputs
@@ -341,140 +393,13 @@ void CL_FinishMove (usercmd_t *cmd)
 //
 	if (++cl.movemessages <= 2)
 		return;
-//
-// figure button bits
-//	
-	if ( in_attack.state & 3 )
-		cmd->buttons |= 1;
-	in_attack.state &= ~2;
 	
-	if (in_jump.state & 3)
-		cmd->buttons |= 2;
-	in_jump.state &= ~2;
-
-	// send milliseconds of time to apply the move
-	ms = host_frametime * 1000;
-	if (ms > 250)
-		ms = 100;		// time was unreasonable
-	cmd->msec = ms;
-
-	VectorCopy (cl.viewangles, cmd->angles);
-
-	cmd->impulse = in_impulse;
-	in_impulse = 0;
-
-
-//
-// chop down so no extra bits are kept that the server wouldn't get
-//
-	cmd->forwardmove = MakeChar (cmd->forwardmove);
-	cmd->sidemove = MakeChar (cmd->sidemove);
-	cmd->upmove = MakeChar (cmd->upmove);
-
-	for (i=0 ; i<3 ; i++)
-		cmd->angles[i] = ((int)(cmd->angles[i]*65536.0/360)&65535) * (360.0/65536.0);
-}
-
-/*
-=================
-CL_SendCmd
-=================
-*/
-void CL_SendCmd (void)
-{
-	sizebuf_t	buf;
-	byte		data[128];
-	int			i;
-	usercmd_t	*cmd, *oldcmd;
-	int			checksumIndex;
-	int			lost;
-	int			seq_hash;
-
-	if (cls.demoplayback)
-		return; // sendcmds come from the demo
-
-	// save this command off for prediction
-	i = cls.netchan.outgoing_sequence & UPDATE_MASK;
-	cmd = &cl.frames[i].cmd;
-	cl.frames[i].senttime = realtime;
-	cl.frames[i].receivedtime = -1;		// we haven't gotten a reply yet
-
-//	seq_hash = (cls.netchan.outgoing_sequence & 0xffff) ; // ^ QW_CHECK_HASH;
-	seq_hash = cls.netchan.outgoing_sequence;
-
-	// get basic movement from keyboard
-	CL_BaseMove (cmd);
-
-	// allow mice or other external controllers to add to the move
-	IN_Move (cmd);
-
-	// if we are spectator, try autocam
-	if (cl.spectator)
-		Cam_Track(cmd);
-
-	CL_FinishMove(cmd);
-
-	Cam_FinishMove(cmd);
-
-// send this and the previous cmds in the message, so
-// if the last packet was dropped, it can be recovered
-	buf.maxsize = 128;
-	buf.cursize = 0;
-	buf.data = data;
-
-	MSG_WriteByte (&buf, clc_move);
-
-	// save the position for a checksum byte
-	checksumIndex = buf.cursize;
-	MSG_WriteByte (&buf, 0);
-
-	// write our lossage percentage
-	lost = CL_CalcNet();
-	MSG_WriteByte (&buf, (byte)lost);
-
-	i = (cls.netchan.outgoing_sequence-2) & UPDATE_MASK;
-	cmd = &cl.frames[i].cmd;
-	MSG_WriteDeltaUsercmd (&buf, &nullcmd, cmd);
-	oldcmd = cmd;
-
-	i = (cls.netchan.outgoing_sequence-1) & UPDATE_MASK;
-	cmd = &cl.frames[i].cmd;
-	MSG_WriteDeltaUsercmd (&buf, oldcmd, cmd);
-	oldcmd = cmd;
-
-	i = (cls.netchan.outgoing_sequence) & UPDATE_MASK;
-	cmd = &cl.frames[i].cmd;
-	MSG_WriteDeltaUsercmd (&buf, oldcmd, cmd);
-
-	// calculate a checksum over the move commands
-	buf.data[checksumIndex] = COM_BlockSequenceCRCByte(
-		buf.data + checksumIndex + 1, buf.cursize - checksumIndex - 1,
-		seq_hash);
-
-	// request delta compression of entities
-	if (cls.netchan.outgoing_sequence - cl.validsequence >= UPDATE_BACKUP-1)
-		cl.validsequence = 0;
-
-	if (cl.validsequence && !cl_nodelta.value && cls.state == ca_active &&
-		!cls.demorecording)
+	if (NET_SendUnreliableMessage (cls.netcon, &buf) == -1)
 	{
-		cl.frames[cls.netchan.outgoing_sequence&UPDATE_MASK].delta_sequence = cl.validsequence;
-		MSG_WriteByte (&buf, clc_delta);
-		MSG_WriteByte (&buf, cl.validsequence&255);
+		Con_Printf ("CL_SendMove: lost server connection\n");
+		CL_Disconnect ();
 	}
-	else
-		cl.frames[cls.netchan.outgoing_sequence&UPDATE_MASK].delta_sequence = -1;
-
-	if (cls.demorecording)
-		CL_WriteDemoCmd(cmd);
-
-//
-// deliver the message
-//
-	Netchan_Transmit (&cls.netchan, buf.cursize, buf.data);	
 }
-
-
 
 /*
 ============
@@ -519,15 +444,5 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("+mlook", IN_MLookDown);
 	Cmd_AddCommand ("-mlook", IN_MLookUp);
 
-	Cvar_RegisterVariable (&cl_nodelta);
-}
-
-/*
-============
-CL_ClearStates
-============
-*/
-void CL_ClearStates (void)
-{
 }
 

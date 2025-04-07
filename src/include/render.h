@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // refresh.h -- public interface to refresh functions
 
+#define	MAXCLIPPLANES	11
+
 #define	TOP_RANGE		16			// soldier uniform colors
 #define	BOTTOM_RANGE	96
 
@@ -36,22 +38,26 @@ typedef struct efrag_s
 
 typedef struct entity_s
 {
-	int						keynum;			// for matching entities in different frames
+	qboolean				forcelink;		// model changed
+
+	int						update_type;
+
+	entity_state_t			baseline;		// to fill in defaults in updates
+
+	double					msgtime;		// time of last update
+	vec3_t					msg_origins[2];	// last two updates (0 is newest)	
 	vec3_t					origin;
+	vec3_t					msg_angles[2];	// last two updates (0 is newest)
 	vec3_t					angles;	
 	struct model_s			*model;			// NULL = no model
+	struct efrag_s			*efrag;			// linked list of efrags
 	int						frame;
+	float					syncbase;		// for client-side animations
 	byte					*colormap;
+	int						effects;		// light, particals, etc
 	int						skinnum;		// for Alias models
-
-	struct player_info_s	*scoreboard;	// identify player
-
-	float					syncbase;
-
-	struct efrag_s			*efrag;			// linked list of efrags (FIXME)
 	int						visframe;		// last frame this entity was
-											// found in an active leaf
-											// only used for static objects
+											//  found in an active leaf
 											
 	int						dlightframe;	// dynamic lighting
 	int						dlightbits;
@@ -88,9 +94,9 @@ typedef struct
 
 	vec3_t		vieworg;
 	vec3_t		viewangles;
-
-	float		fov_x, fov_y;
 	
+	float		fov_x, fov_y;
+
 	int			ambientlight;
 } refdef_t;
 
@@ -106,7 +112,6 @@ extern vec3_t	r_origin, vpn, vright, vup;
 
 extern	struct texture_s	*r_notexture_mip;
 
-extern	entity_t	r_worldentity;
 
 void R_Init (void);
 void R_InitTextures (void);
@@ -126,17 +131,17 @@ void R_ParseParticleEffect (void);
 void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count);
 void R_RocketTrail (vec3_t start, vec3_t end, int type);
 
+#ifdef QUAKE2
+void R_DarkFieldParticles (entity_t *ent);
+#endif
 void R_EntityParticles (entity_t *ent);
 void R_BlobExplosion (vec3_t org);
 void R_ParticleExplosion (vec3_t org);
+void R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength);
 void R_LavaSplash (vec3_t org);
 void R_TeleportSplash (vec3_t org);
 
 void R_PushDlights (void);
-void R_InitParticles (void);
-void R_ClearParticles (void);
-void R_DrawParticles (void);
-void R_DrawWaterSurfaces (void);
 
 
 //
