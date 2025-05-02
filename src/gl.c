@@ -458,7 +458,7 @@ void VID_Init(unsigned char *palette)
 	char	gldir[MAX_OSPATH];
 	int width = 640, height = 480;
 	unsigned long mask;
-	qboolean fullscreen = false;
+	qboolean fullscreen = true;
 	int MajorVersion, MinorVersion;
 	int actualWidth, actualHeight;
 
@@ -499,8 +499,16 @@ void VID_Init(unsigned char *palette)
 	if (vid.conheight < 200)
 		vid.conheight = 200;
 
-	win = RGFW_createWindow("Quake", RGFW_RECT(0, 0, width, height), 0);
+	win = RGFW_createWindow("Quake", RGFW_RECT(0, 0, width, height), RGFW_windowCenter);
 	RGFW_window_makeCurrent(win);
+
+	if(fullscreen){
+		RGFW_monitor mon = RGFW_window_getMonitor(win);
+		RGFW_window_resize(win, mon.mode.area);
+		RGFW_window_setFullscreen(win, 1);
+		width = win->r.w;
+		height = win->r.h;
+	}
 
 	scr_width = width;
 	scr_height = height;
