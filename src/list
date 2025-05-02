@@ -49,3 +49,7 @@ sys.o
 sound.o
 gl.o
 stb_ds.o
+miniaudio.o
+snd_mem.o
+snd_ma.o
+mix.o
