@@ -1,7 +1,10 @@
+OPENGL_CFLAGS = `pkg-config --cflags gl`
+OPENGL_LIBS = `pkg-config --libs gl`
+
 CC = cc
-CFLAGS = -g -fomit-frame-pointer -funroll-loops -fcommon -DGL_EXT_SHARED -DGLQUAKE -Iinclude `pkg-config --cflags x11` `pkg-config --cflags gl`
+CFLAGS = -g -fomit-frame-pointer -funroll-loops -fcommon -DGL_EXT_SHARED -DGLQUAKE -Iinclude `pkg-config --cflags x11` $(OPENGL_CFLAGS)
 LDFLAGS =
-LIBS = `pkg-config --libs x11` `pkg-config --libs gl` -lm
+LIBS = -lm -lpthread $(OPENGL_LIBS)
 
 .PHONY: all clean
 .SUFFIXES: .c .o
