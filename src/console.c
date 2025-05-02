@@ -426,8 +426,8 @@ void Con_DPrintf (char *fmt, ...)
 	va_list		argptr;
 	char		msg[MAXPRINTMSG];
 		
-	if (!developer.value)
-		return;			// don't confuse non-developers with techie stuff...
+//	if (!developer.value)
+//		return;			// don't confuse non-developers with techie stuff...
 
 	va_start (argptr,fmt);
 	vsprintf (msg,fmt,argptr);

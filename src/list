@@ -44,7 +44,8 @@ zone.o
 view.o
 wad.o
 world.o
-cd_linux.o
-sys_linux.o
+cd.o
+sys.o
 sound.o
 gl.o
+stb_ds.o

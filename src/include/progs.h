@@ -24,9 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef union eval_s
 {
 	string_t		string;
+	func_t			function;
 	float			_float;
 	float			vector[3];
-	func_t			function;
 	int				_int;
 	int				edict;
 } eval_t;	
@@ -70,10 +70,14 @@ void PR_LoadProgs (void);
 
 void PR_Profile_f (void);
 
+char* PR_GetString(int num);
+int PR_SetEngineString(char* s);
+int PR_AllocString(int size, char** ptr);
+
 edict_t *ED_Alloc (void);
 void ED_Free (edict_t *ed);
 
-char	*ED_NewString (char *string);
+static string_t	ED_NewString (const char *string);
 // returns a copy of the string allocated from the server's string heap
 
 void ED_Print (edict_t *ed);
@@ -103,13 +107,13 @@ int NUM_FOR_EDICT(edict_t *e);
 #define	G_EDICT(o) ((edict_t *)((byte *)sv.edicts+ *(int *)&pr_globals[o]))
 #define G_EDICTNUM(o) NUM_FOR_EDICT(G_EDICT(o))
 #define	G_VECTOR(o) (&pr_globals[o])
-#define	G_STRING(o) (pr_strings + *(string_t *)&pr_globals[o])
+#define	G_STRING(o) (PR_GetString(*(string_t *)&pr_globals[o]))
 #define	G_FUNCTION(o) (*(func_t *)&pr_globals[o])
 
 #define	E_FLOAT(e,o) (((float*)&e->v)[o])
 #define	E_INT(e,o) (*(int *)&((float*)&e->v)[o])
 #define	E_VECTOR(e,o) (&((float*)&e->v)[o])
-#define	E_STRING(e,o) (pr_strings + *(string_t *)&((float*)&e->v)[o])
+#define	E_STRING(e,o) (PR_GetString(*(string_t *)&((float*)&e->v)[o]))
 
 extern	int		type_size[8];
 
