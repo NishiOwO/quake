@@ -29,6 +29,7 @@ ma_device_config config;
 int total = 0;
 int tbuf = 0;
 int pending = 0;
+int quit = 0;
 
 #define BUFFER_SIZE		8192
 unsigned char dma_buffer[BUFFER_SIZE];
@@ -38,8 +39,9 @@ void data_callback(ma_device* device, void* out, const void* in, ma_uint32 frame
 	memset(out, 0, frame * 4);
 
 	while(pending == 0){
-		if(pending) break;
+		if(quit) break;
 	}
+	if(quit) return;
 	pending = 0;
 	if(tbuf == 0){
 		tbuf = BUFFER_SIZE;
@@ -115,7 +117,7 @@ int SNDDMA_GetSamples(void)
 void SNDDMA_Shutdown(void)
 {
 	if (snd_inited) {
-		while(pending) pending = 0;
+		quit = 1;
 		ma_device_uninit(&device);
 		snd_inited = 0;
 	}
