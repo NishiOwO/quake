@@ -847,12 +847,12 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 		// yield the CPU for a little while when paused, minimized, or not the focus
 			if ((cl.paused && (!ActiveApp && 1)) || Minimized || block_drawing)
 			{
-				SleepUntilInput (PAUSE_SLEEP);
+//				SleepUntilInput (PAUSE_SLEEP);
 //				scr_skipupdate = 1;		// no point in bothering to draw
 			}
 			else if (!ActiveApp && 1)
 			{
-				SleepUntilInput (NOT_FOCUS_SLEEP);
+//				SleepUntilInput (NOT_FOCUS_SLEEP);
 			}
 
 			newtime = Sys_FloatTime ();
