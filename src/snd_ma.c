@@ -34,6 +34,7 @@ int quit = 0;
 unsigned char dma_buffer[BUFFER_SIZE];
 
 ma_event ev;
+ma_mutex mx;
 
 void data_callback(ma_device* device, void* out, const void* in, ma_uint32 frame){
 	int sz = 0;
@@ -42,6 +43,7 @@ void data_callback(ma_device* device, void* out, const void* in, ma_uint32 frame
 	ma_event_wait(&ev);
 	if(quit) return;
 
+	ma_mutex_lock(&mx);
 	if(tbuf == 0){
 		tbuf = BUFFER_SIZE;
 	}
@@ -49,9 +51,7 @@ void data_callback(ma_device* device, void* out, const void* in, ma_uint32 frame
 	memcpy(out, dma_buffer + (BUFFER_SIZE - tbuf), sz);
 	tbuf -= sz;
 	total += sz / 2;
-	if(tbuf == 0 && sz > 0){
-		tbuf = 0;
-	}
+	ma_mutex_unlock(&mx);
 }
 
 qboolean SNDDMA_Init(void)
@@ -69,6 +69,7 @@ qboolean SNDDMA_Init(void)
 	}
 
 	ma_event_init(&ev);
+	ma_mutex_init(&mx);
 
 	shm = &sn;
 	shm->splitbuffer = 0;
@@ -77,7 +78,7 @@ qboolean SNDDMA_Init(void)
 	config.playback.format = ma_format_s16;
 	config.playback.channels = 2;
 	config.sampleRate = 11025;
-	config.sampleRate = 44100;
+//	config.sampleRate = 44100;
 	config.dataCallback = data_callback;
 	if(ma_device_init(NULL, &config, &device) != MA_SUCCESS){
 		return 0;
@@ -123,6 +124,7 @@ void SNDDMA_Shutdown(void)
 		ma_device_uninit(&device);
 		snd_inited = 0;
 		ma_event_uninit(&ev);
+		ma_mutex_uninit(&mx);
 	}
 }
 
