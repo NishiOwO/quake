@@ -1,4 +1,10 @@
+#ifdef _WIN32
+#define OEMRESOURCE
+#include <windows.h>
+#else
 #define RGFW_USE_XDL
+#endif
+#define RGFW_OPENGL
 #define RGFW_IMPLEMENTATION
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
@@ -21,7 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include <stdarg.h>
 #include <stdio.h>
+#ifndef _WIN32
 #include <signal.h>
+#endif
 
 #include "quakedef.h"
 
@@ -279,6 +287,7 @@ void signal_handler(int sig)
 
 void InitSig(void)
 {
+#ifndef _WIN32
 	signal(SIGHUP, signal_handler);
 	signal(SIGINT, signal_handler);
 	signal(SIGQUIT, signal_handler);
@@ -289,6 +298,7 @@ void InitSig(void)
 	signal(SIGFPE, signal_handler);
 	signal(SIGSEGV, signal_handler);
 	signal(SIGTERM, signal_handler);
+#endif
 }
 
 void VID_ShiftPalette(unsigned char *p)

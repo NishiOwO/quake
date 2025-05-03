@@ -767,6 +767,10 @@ int Datagram_Init (void)
 {
 	int i;
 	int csock;
+#ifdef _WIN32
+	WSADATA wsa;
+	WSAStartup(MAKEWORD(1, 1), &wsa);
+#endif
 
 	myDriverLevel = net_driverlevel;
 	Cmd_AddCommand ("net_stats", NET_Stats_f);

@@ -29,8 +29,6 @@ net_dgrm.o
 net_loop.o
 net_main.o
 net_vcr.o
-net_udp.o
-net_bsd.o
 pr_cmds.o
 pr_edict.o
 pr_exec.o
@@ -45,7 +43,6 @@ view.o
 wad.o
 world.o
 cd.o
-sys.o
 sound.o
 gl.o
 stb_ds.o

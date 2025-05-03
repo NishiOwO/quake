@@ -21,9 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-#ifdef _WIN32
-#include "winquake.h"
-#else
+#ifndef WINQUAKE
 #define DWORD	unsigned long
 #endif
 
@@ -67,7 +65,7 @@ void S_TransferStereo16 (int endtime)
 	int		lpos;
 	int		lpaintedtime;
 	DWORD	*pbuf;
-#ifdef _WIN32
+#ifdef WINQUAKE
 	int		reps;
 	DWORD	dwSize,dwSize2;
 	DWORD	*pbuf2;
@@ -79,7 +77,7 @@ void S_TransferStereo16 (int endtime)
 	snd_p = (int *) paintbuffer;
 	lpaintedtime = paintedtime;
 
-#ifdef _WIN32
+#ifdef WINQUAKE
 	if (pDSBuf)
 	{
 		reps = 0;
@@ -130,7 +128,7 @@ void S_TransferStereo16 (int endtime)
 		lpaintedtime += (snd_linear_count>>1);
 	}
 
-#ifdef _WIN32
+#ifdef WINQUAKE
 	if (pDSBuf)
 		pDSBuf->lpVtbl->Unlock(pDSBuf, pbuf, dwSize, NULL, 0);
 #endif
@@ -146,7 +144,7 @@ void S_TransferPaintBuffer(int endtime)
 	int		val;
 	int		snd_vol;
 	DWORD	*pbuf;
-#ifdef _WIN32
+#ifdef WINQUAKE
 	int		reps;
 	DWORD	dwSize,dwSize2;
 	DWORD	*pbuf2;
@@ -166,7 +164,7 @@ void S_TransferPaintBuffer(int endtime)
 	step = 3 - shm->channels;
 	snd_vol = volume.value*256;
 
-#ifdef _WIN32
+#ifdef WINQUAKE
 	if (pDSBuf)
 	{
 		reps = 0;
@@ -228,7 +226,7 @@ void S_TransferPaintBuffer(int endtime)
 		}
 	}
 
-#ifdef _WIN32
+#ifdef WINQUAKE
 	if (pDSBuf) {
 		DWORD dwNewpos, dwWrite;
 		int il = paintedtime;

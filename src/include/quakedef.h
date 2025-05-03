@@ -23,6 +23,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	QUAKE_GAME			// as opposed to utilities
 
+#ifdef _WIN32
+#define OEMRESOURCE
+#include <windows.h>
+#endif
+
 #define	VERSION				1.09
 #define	GLQUAKE_VERSION		1.00
 #define	D3DQUAKE_VERSION	0.01
@@ -45,7 +50,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #include <setjmp.h>
 
-#if defined(_WIN32) && !defined(WINDED)
+#if defined(WINQUAKE)
+#include "winquake.h"
 
 #if defined(_M_IX86)
 #define __i386__	1

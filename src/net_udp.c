@@ -22,12 +22,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 
 #include <sys/types.h>
+#ifdef _WIN32
+#include <winsock.h>
+#define ioctl ioctlsocket
+#define close closesocket
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <sys/param.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
+#endif
+#include <sys/param.h>
 #include <errno.h>
 
 #ifdef __sun__
@@ -38,8 +45,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <libc.h>
 #endif
 
-extern int gethostname (char *, int);
-extern int close (int);
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 512
+#endif
 
 extern cvar_t hostname;
 
@@ -60,6 +68,10 @@ int UDP_Init (void)
 	char	buff[MAXHOSTNAMELEN];
 	struct qsockaddr addr;
 	char *colon;
+#ifdef _WIN32
+	WSADATA wsa;
+	WSAStartup(MAKEWORD(1, 1), &wsa);
+#endif
 	
 	if (COM_CheckParm ("-noudp"))
 		return -1;
@@ -135,8 +147,13 @@ int UDP_OpenSocket (int port)
 	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
 		return -1;
 
+#ifdef _WIN32
+	if (ioctl (newsocket, FIONBIO, (u_long*)&_true) == -1)
+		goto ErrorReturn;
+#else
 	if (ioctl (newsocket, FIONBIO, (char *)&_true) == -1)
 		goto ErrorReturn;
+#endif
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
