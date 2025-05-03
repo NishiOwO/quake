@@ -40,4 +40,4 @@ else
 endif
 
 clean:
-	rm -f quake *.o
+	rm -f quake quake.exe *.o

@@ -28,21 +28,20 @@ ma_device_config config;
 
 int total = 0;
 int tbuf = 0;
-int pending = 0;
 int quit = 0;
 
 #define BUFFER_SIZE		8192
 unsigned char dma_buffer[BUFFER_SIZE];
 
+ma_event ev;
+
 void data_callback(ma_device* device, void* out, const void* in, ma_uint32 frame){
 	int sz = 0;
 	memset(out, 0, frame * 4);
 
-	while(pending == 0){
-		if(quit) break;
-	}
+	ma_event_wait(&ev);
 	if(quit) return;
-	pending = 0;
+
 	if(tbuf == 0){
 		tbuf = BUFFER_SIZE;
 	}
@@ -68,6 +67,8 @@ qboolean SNDDMA_Init(void)
 		printf("Sound already init'd\n");
 		return 0;
 	}
+
+	ma_event_init(&ev);
 
 	shm = &sn;
 	shm->splitbuffer = 0;
@@ -118,8 +119,10 @@ void SNDDMA_Shutdown(void)
 {
 	if (snd_inited) {
 		quit = 1;
+		ma_event_signal(&ev);
 		ma_device_uninit(&device);
 		snd_inited = 0;
+		ma_event_uninit(&ev);
 	}
 }
 
@@ -132,7 +135,6 @@ Send sound to device if buffer isn't really the dma buffer
 */
 void SNDDMA_Submit(void)
 {
-	if(pending) return;
-	pending++;
+	ma_event_signal(&ev);
 }
 
