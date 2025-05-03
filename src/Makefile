@@ -2,7 +2,7 @@ OPENGL_CFLAGS = `pkg-config --cflags gl`
 OPENGL_LIBS = `pkg-config --libs gl`
 
 CC = cc
-CFLAGS = -g -fomit-frame-pointer -funroll-loops -fcommon -DGL_EXT_SHARED -DGLQUAKE -Iinclude `pkg-config --cflags x11` $(OPENGL_CFLAGS)
+CFLAGS = -g -fomit-frame-pointer -funroll-loops -fcommon -DGL_EXT_SHARED -DGLQUAKE -Iinclude `pkg-config --cflags x11` $(OPENGL_CFLAGS) -Wno-error=implicit-function-declaration
 LDFLAGS =
 LIBS = -lm -lpthread $(OPENGL_LIBS)
 
