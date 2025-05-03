@@ -1,26 +1,35 @@
+TARGET = unix
+DEBUG = -O2
+
+ifeq ($(TARGET),unix)
 OPENGL_CFLAGS = `pkg-config --cflags gl`
-OPENGL_LIBS = `pkg-config --libs gl`
+OPENGL_LIBS = `pkg-config --libs gl` `pkg-config --libs glu`
+else ifeq ($(TARGET),windows)
+OPENGL_CFLAGS =
+OPENGL_LIBS = -lopengl32 -lglu32
+endif
 
 EXEC =
 
 CC = $(GCC_PREFIX)gcc
 WINDRES = $(GCC_PREFIX)windres
-CFLAGS = -g -fomit-frame-pointer -funroll-loops -fcommon -DGL_EXT_SHARED -DGLQUAKE -Iinclude `pkg-config --cflags x11` $(OPENGL_CFLAGS) -Wno-error=implicit-function-declaration
+CFLAGS = $(DEBUG) -fomit-frame-pointer -funroll-loops -fcommon -DGL_EXT_SHARED -DGLQUAKE -Iinclude -Wno-error=implicit-function-declaration $(OPENGL_CFLAGS)
 LDFLAGS =
-LIBS = -lm -lpthread $(OPENGL_LIBS)
+LIBS = $(OPENGL_LIBS)
 
 .PHONY: all clean
 .SUFFIXES: .c .o .rc .res
 
 OBJS = $(shell cat list)
 
-TARGET = unix
 ifeq ($(TARGET),unix)
 OBJS += net_udp.o net_bsd.o sys.o
+CFLAGS += `pkg-config --cflags x11`
+LIBS += -lm -lpthread
 else ifeq ($(TARGET),windows)
 OBJS += net_udp.o net_bsd.o sys_win.o conproc.o quake.res
-CFLAGS = -mwindows -fcommon -DGL_EXT_SHARED -DGLQUAKE -Iinclude
-LIBS = -lopengl32 -lglu32 -lgdi32 -lwsock32
+CFLAGS += -mwindows
+LIBS += -lgdi32 -lwsock32
 EXEC = .exe
 endif
 
