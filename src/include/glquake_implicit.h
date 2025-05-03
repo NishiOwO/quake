@@ -24,3 +24,9 @@ void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
 void R_RotateForEntity (entity_t *e);
 void R_StoreEfrags (efrag_t **ppefrag);
 void GL_Set2D (void);
+#ifdef QUAKE2
+void PF_WaterMove (void);
+void R_DrawSkyBox (void);
+void R_ClearSkyBox (void);
+void R_LoadSkys (void);
+#endif

@@ -22,6 +22,10 @@ LIBS = $(OPENGL_LIBS)
 
 OBJS = $(shell cat list)
 
+ifdef QUAKE2
+CFLAGS += -DQUAKE2
+endif
+
 ifeq ($(TARGET),unix)
 OBJS += net_udp.o net_bsd.o sys.o
 CFLAGS += `pkg-config --cflags x11`
@@ -33,7 +37,18 @@ LIBS += -lgdi32 -lwsock32
 EXEC = .exe
 endif
 
-all: quake$(EXEC)
+all:
+ifdef QUAKE2
+	@echo "Quake2: Enabled"
+else
+	@echo "Quake2: Disabled"
+endif
+	@echo " Target: $(TARGET)"
+	@echo "     CC: $(CC)"
+	@echo " CFLAGS: $(CFLAGS)"
+	@echo "LDFLAGS: $(LDFLAGS)"
+	@echo "   LIBS: $(LIBS)"
+	$(MAKE) quake$(EXEC)
 
 quake$(EXEC): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
