@@ -17,7 +17,15 @@ quake: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 .c.o:
-	$(CC) $(CFLAGS) -c -o $@ $<
+	@echo CC $@
+ifdef DEV
+	@rm -f $@.log
+	@$(CC) $(CFLAGS) -c -o $@ $< >$@.log 2>&1
+	@./proc.sh $@ $<
+	@rm -f $@.log
+else
+	@$(CC) $(CFLAGS) -c -o $@ $<
+endif
 
 clean:
 	rm -f quake *.o

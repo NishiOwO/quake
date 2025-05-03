@@ -254,3 +254,5 @@ extern qboolean gl_mtexable;
 
 void GL_DisableMultitexture(void);
 void GL_EnableMultitexture(void);
+
+#include <glquake_implicit.h>
