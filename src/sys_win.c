@@ -274,9 +274,6 @@ void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
    		Sys_Error("Protection change failed\n");
 }
 
-
-#ifndef _M_IX86
-
 void Sys_SetFPCW (void)
 {
 }
@@ -292,8 +289,6 @@ void Sys_PopFPCW (void)
 void MaskExceptions (void)
 {
 }
-
-#endif
 
 /*
 ================
