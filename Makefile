@@ -1,13 +1,27 @@
-TARGET = unix
+TARGET = windows
 DEBUG = -O2
 
+detected_OS := $(shell uname 2>/dev/null || echo Unknown)
+
+ifeq ($(detected_OS),Darwin)        # Mac OS X
+	TARGET = macos
+endif
+ifneq (,$(filter $(detected_OS),Linux NetBSD FreeBSD OpenBSD))
+	TARGET = unix
+endif
+
 ifeq ($(TARGET),unix)
-OPENGL_CFLAGS = `pkg-config --cflags gl`
-OPENGL_LIBS = `pkg-config --libs gl` `pkg-config --libs glu`
+OPENGL_CFLAGS = 
+OPENGL_LIBS = -lGL -lGLU 
 else ifeq ($(TARGET),windows)
 OPENGL_CFLAGS =
 OPENGL_LIBS = -lopengl32 -lglu32
+else ifeq ($(TARGET),macos)
+OPENGL_CFLAGS =
+OPENGL_LIBS = framework OpenGL
 endif
+
+
 
 EXEC =
 
@@ -27,15 +41,20 @@ CFLAGS += -DQUAKE2
 endif
 
 ifeq ($(TARGET),unix)
-OBJS += net_udp.o net_bsd.o sys.o
-CFLAGS += `pkg-config --cflags x11`
+OBJS += src/net_udp.o src/net_bsd.o src/sys.o
+CFLAGS += -lX11 -lXrandr
+LIBS += -lm -lpthread
+else ifeq ($(TARGET),macos)
+OBJS += src/net_udp.o src/net_bsd.o src/sys.o
+CFLAGS += -framework CoreVideo -framework Cocoa -framework IOKit
 LIBS += -lm -lpthread
 else ifeq ($(TARGET),windows)
-OBJS += net_udp.o net_bsd.o sys_win.o conproc.o quake.res
+OBJS += src/net_udp.o src/net_bsd.o src/sys_win.o src/conproc.o src/quake.res
 CFLAGS += -mwindows
 LIBS += -lgdi32 -lwsock32
 EXEC = .exe
 endif
+
 
 all:
 ifdef QUAKE2
@@ -53,7 +72,7 @@ endif
 quake$(EXEC): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
-.c.o:
+src/.c.o:
 	@echo CC $@
 ifdef DEV
 	@rm -f $@.log
@@ -64,9 +83,9 @@ else
 	@$(CC) $(CFLAGS) -c -o $@ $<
 endif
 
-.rc.res:
+src/quake.res: src/quake.rc 
 	@echo RC $@
 	@$(WINDRES) -I include -O coff $< $@
 
 clean:
-	rm -f quake quake.exe *.o *.res
+	rm -f quake quake.exe res/*.res src/*.o
