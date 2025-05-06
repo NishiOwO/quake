@@ -19,7 +19,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Install packages
-      run: sudo apt-get install mingw-w64
+      run: sudo apt-get install -y --no-install-recommends libx11-dev mesa-common-dev libglx-dev libxcursor-dev mesa-vulkan-drivers libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev 
     - name: Build
       run: cd src && make TARGET=linux && mv quake ../quake32
     - name: Upload artifact
@@ -41,7 +41,7 @@ jobs:
     - name: Install packages
       run: sudo apt-get install -y --no-install-recommends libx11-dev mesa-common-dev libglx-dev libxcursor-dev mesa-vulkan-drivers libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev 
     - name: Build
-      run: cd src && make TARGET=windows GCC_PREFIX=x86_64-w64-mingw32- -j4 && mv quake ../quake64
+      run: cd src && make TARGET=linux && mv quake ../quake64
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
