@@ -25,8 +25,8 @@ jobs:
         path: quake32-macos
 
   build-win64:
-    name: "Build for Linux 64-bit"
-    runs-on: ubuntu-latest
+    name: "Build for MacOS 64-bit"
+    runs-on: macos-latest
 
     permissions:
       contents: write
@@ -35,7 +35,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Install packages
-      run: sudo apt-get install -y --no-install-recommends libx11-dev mesa-common-dev libglx-dev libxcursor-dev mesa-vulkan-drivers libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libglu1-mesa-dev 
+      run: echo starting 
     - name: Build
       run: make && mv quake quake64-macos
     - name: Upload artifact
