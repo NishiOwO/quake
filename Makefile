@@ -42,12 +42,11 @@ endif
 
 ifeq ($(TARGET),unix)
 OBJS += src/net_udp.o src/net_bsd.o src/sys.o
-CFLAGS += -lX11 -lXrandr
-LIBS += -lm -lpthread
+CFLAGS += 
+LIBS += -lm -lpthread -lX11 -lXrandr
 else ifeq ($(TARGET),macos)
 OBJS += src/net_udp.o src/net_bsd.o src/sys.o
-CFLAGS += -framework CoreVideo -framework Cocoa -framework IOKit
-LIBS += -lm -lpthread
+LIBS += -lm -lpthread -framework CoreVideo -framework Cocoa -framework IOKit
 else ifeq ($(TARGET),windows)
 OBJS += src/net_udp.o src/net_bsd.o src/sys_win.o src/conproc.o src/quake.res
 CFLAGS += -mwindows
