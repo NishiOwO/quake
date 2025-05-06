@@ -3,10 +3,6 @@ name: "Build RGFW Quake For Linux"
 on:
   push:
 
-concurrency:
-  group: "build"
-  cancel-in-progress: true
-
 jobs:
   build-win32:
     name: "Build for Linux 32-bit"
