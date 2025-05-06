@@ -1,4 +1,4 @@
-name: "Build RGFW Quake"
+name: "Build RGFW Quake For Windows"
 
 on:
   push:
@@ -21,7 +21,7 @@ jobs:
     - name: Install packages
       run: sudo apt-get install mingw-w64
     - name: Build
-      run: make TARGET=windows GCC_PREFIX=i686-w64-mingw32- -j4 && mv quake.exe ../quake32.exe
+      run: make TARGET=windows GCC_PREFIX=i686-w64-mingw32- -j4 && mv quake.exe quake32.exe
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
@@ -41,7 +41,7 @@ jobs:
     - name: Install packages
       run: sudo apt-get install mingw-w64
     - name: Build
-      run: make TARGET=windows GCC_PREFIX=x86_64-w64-mingw32- -j4 && mv quake.exe ../quake64.exe
+      run: make TARGET=windows GCC_PREFIX=x86_64-w64-mingw32- -j4 && mv quake.exe quake64.exe
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
