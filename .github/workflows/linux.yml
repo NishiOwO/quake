@@ -17,7 +17,7 @@ jobs:
     - name: Install packages
       run: sudo apt-get install -y --no-install-recommends libx11-dev mesa-common-dev libglx-dev libxcursor-dev mesa-vulkan-drivers libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libglu1-mesa-dev 
     - name: Build
-      run: make && mv quake quake32
+      run: make && mv quake quake32-linux
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
@@ -37,7 +37,7 @@ jobs:
     - name: Install packages
       run: sudo apt-get install -y --no-install-recommends libx11-dev mesa-common-dev libglx-dev libxcursor-dev mesa-vulkan-drivers libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libglu1-mesa-dev 
     - name: Build
-      run: make && mv quake quake64
+      run: make && mv quake quake64-linux
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
