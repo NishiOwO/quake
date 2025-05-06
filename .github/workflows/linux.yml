@@ -59,16 +59,16 @@ jobs:
     - name: Download from build-win32
       uses: actions/download-artifact@v4
       with:
-        name: quake32
+        name: quake32-linux
     - name: Download from build-win64
       uses: actions/download-artifact@v4
       with:
-        name: quake64
+        name: quake64-linux
     - name: Delete old release
       run: gh release delete "latest" --cleanup-tag -y || true
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Release
-      run: gh release create -t "latest" "latest" quake32 quake64 -n "Latest"
+      run: gh release create -t "latest" "latest" quake32-linux quake64-linux -n "Latest"
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -5,8 +5,8 @@ on:
 
 jobs:
   build-win32:
-    name: "Build for Linux 32-bit"
-    runs-on: ubuntu-latest
+    name: "Build for MacOS 32-bit"
+    runs-on: macos-latest
 
     permissions:
       contents: write
@@ -15,7 +15,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Install packages
-      run: sudo apt-get install -y --no-install-recommends libx11-dev mesa-common-dev libglx-dev libxcursor-dev mesa-vulkan-drivers libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libglu1-mesa-dev 
+      run: echo starting 
     - name: Build
       run: make && mv quake quake32-macos
     - name: Upload artifact
@@ -59,16 +59,16 @@ jobs:
     - name: Download from build-win32
       uses: actions/download-artifact@v4
       with:
-        name: quake32
+        name: quake32-macos
     - name: Download from build-win64
       uses: actions/download-artifact@v4
       with:
-        name: quake64
+        name: quake64-macos
     - name: Delete old release
       run: gh release delete "latest" --cleanup-tag -y || true
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Release
-      run: gh release create -t "latest" "latest" quake32 quake64 -n "Latest"
+      run: gh release create -t "latest" "latest" quake32-macos quake64-macos -n "Latest"
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
