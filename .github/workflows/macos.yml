@@ -21,8 +21,8 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: quake32
-        path: quake32
+        name: quake32-macos
+        path: quake32-macos
 
   build-win64:
     name: "Build for Linux 64-bit"
@@ -41,8 +41,8 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: quake64
-        path: quake64
+        name: quake64-macos
+        path: quake64-macos
 
   release:
     name: "Release"
