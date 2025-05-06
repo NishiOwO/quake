@@ -18,7 +18,7 @@ OPENGL_CFLAGS =
 OPENGL_LIBS = -lopengl32 -lglu32
 else ifeq ($(TARGET),macos)
 OPENGL_CFLAGS =
-OPENGL_LIBS = framework OpenGL
+OPENGL_LIBS = -framework OpenGL
 endif
 
 
