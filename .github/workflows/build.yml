@@ -6,7 +6,7 @@ on:
 jobs:
   build-win32:
     name: "Build for Windows 32-bit"
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     permissions:
       contents: write
@@ -14,19 +14,17 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Install packages
-      run: sudo apt-get install mingw-w64
     - name: Build
       run: make TARGET=windows GCC_PREFIX=i686-w64-mingw32- -j4 && mv quake.exe quake32.exe
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: quake32
+        name: quake32.exe
         path: quake32.exe
 
   build-win64:
     name: "Build for Windows 64-bit"
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     permissions:
       contents: write
@@ -34,14 +32,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Install packages
-      run: sudo apt-get install mingw-w64
     - name: Build
-      run: make TARGET=windows GCC_PREFIX=x86_64-w64-mingw32- -j4 && mv quake.exe quake64.exe
+      run: make TARGET=windows -j4 && mv quake.exe quake64.exe
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: quake64
+        name: quake64.exe
         path: quake64.exe
 
   release:
@@ -59,11 +55,11 @@ jobs:
     - name: Download from build-win32
       uses: actions/download-artifact@v4
       with:
-        name: quake32
+        name: quake32.exe
     - name: Download from build-win64
       uses: actions/download-artifact@v4
       with:
-        name: quake64
+        name: quake64.exe
     - name: Delete old release
       run: gh release delete "latest" --cleanup-tag -y || true
       env:
