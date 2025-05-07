@@ -1,65 +1,130 @@
-
-name: "Release All Platforms"
+name: "Build and Release RGFW Quake (All Platforms)"
 
 on:
-  workflow_run:
-    workflows: ["Build RGFW Quake For Windows", "Build RGFW Quake For Linux", "Build RGFW Quake For MacOS"]
-    types:
-      - completed
+  push:
 
 jobs:
-  release:
-    name: "Release"
-    runs-on: ubuntu-latest
-
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
+  build-win32:
+    name: "Windows 32-bit"
+    runs-on: windows-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Download Windows 32-bit
-      uses: actions/download-artifact@v4
+    - uses: actions/checkout@v4
+    - run: make TARGET=windows -j4 && mv quake.exe quake32.exe
+    - uses: actions/upload-artifact@v4
       with:
         name: quake32.exe
-        path: artifacts/
+        path: quake32.exe
 
-    - name: Download Windows 64-bit
-      uses: actions/download-artifact@v4
+  build-win64:
+    name: "Windows 64-bit"
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: make TARGET=windows -j4 && mv quake.exe quake64.exe
+    - uses: actions/upload-artifact@v4
       with:
         name: quake64.exe
-        path: artifacts/
+        path: quake64.exe
 
-    - name: Download Linux 32-bit
-      uses: actions/download-artifact@v4
+  build-linux32:
+    name: "Linux 32-bit"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: sudo apt install -y libx11-dev ...
+    - run: make && mv quake quake32-linux
+    - uses: actions/upload-artifact@v4
       with:
         name: quake32-linux
-        path: artifacts/
+        path: quake32-linux
 
-    - name: Download Linux 64-bit
-      uses: actions/download-artifact@v4
+  build-linux64:
+    name: "Linux 64-bit"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: sudo apt install -y libx11-dev ...
+    - run: make && mv quake quake64-linux
+    - uses: actions/upload-artifact@v4
       with:
         name: quake64-linux
-        path: artifacts/
+        path: quake64-linux
 
-    - name: Download macOS 32-bit
-      uses: actions/download-artifact@v4
+  build-macos32:
+    name: "macOS 32-bit"
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: make && mv quake quake32-macos
+    - uses: actions/upload-artifact@v4
       with:
         name: quake32-macos
-        path: artifacts/
+        path: quake32-macos
 
-    - name: Download macOS 64-bit
-      uses: actions/download-artifact@v4
+  build-macos64:
+    name: "macOS 64-bit"
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: make && mv quake quake64-macos
+    - uses: actions/upload-artifact@v4
       with:
         name: quake64-macos
-        path: artifacts/
+        path: quake64-macos
 
-    - name: Delete old release (if exists)
+  release:
+    name: "Release All"
+    runs-on: ubuntu-latest
+    needs:
+      - build-win32
+      - build-win64
+      - build-linux32
+      - build-linux64
+      - build-macos32
+      - build-macos64
+
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: quake32.exe
+        path: .
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: quake64.exe
+        path: .
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: quake32-linux
+        path: .
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: quake64-linux
+        path: .
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: quake32-macos
+        path: .
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: quake64-macos
+        path: .
+
+    - name: Delete old release
       run: gh release delete "latest" --cleanup-tag -y || true
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Create new release
-      run: gh release create -t "latest" "latest" artifacts/* -n "Latest multiplatform release"
+      run: gh release create -t "latest" "latest" quake* -n "Latest multiplatform release"
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
