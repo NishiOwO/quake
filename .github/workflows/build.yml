@@ -3,6 +3,10 @@ name: "Build and Release RGFW Quake (All Platforms)"
 on:
   push:
 
+concurrency:
+  group: "build"
+  cancel-in-progress: true
+  
 jobs:
   build-win32:
     name: "Windows 32-bit"
