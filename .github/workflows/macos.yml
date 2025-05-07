@@ -43,32 +43,3 @@ jobs:
       with:
         name: quake64-macos
         path: quake64-macos
-
-  release:
-    name: "Release"
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-
-    needs: [build-win32, build-win64]
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Download from build-win32
-      uses: actions/download-artifact@v4
-      with:
-        name: quake32-macos
-    - name: Download from build-win64
-      uses: actions/download-artifact@v4
-      with:
-        name: quake64-macos
-    - name: Delete old release
-      run: gh release delete "latest" --cleanup-tag -y || true
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Release
-      run: gh release create -t "latest" "latest" quake32-macos quake64-macos -n "Latest"
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,65 @@
+
+name: "Release All Platforms"
+
+on:
+  workflow_run:
+    workflows: ["Build RGFW Quake For Windows", "Build RGFW Quake For Linux", "Build RGFW Quake For MacOS"]
+    types:
+      - completed
+
+jobs:
+  release:
+    name: "Release"
+    runs-on: ubuntu-latest
+
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Download Windows 32-bit
+      uses: actions/download-artifact@v4
+      with:
+        name: quake32.exe
+        path: artifacts/
+
+    - name: Download Windows 64-bit
+      uses: actions/download-artifact@v4
+      with:
+        name: quake64.exe
+        path: artifacts/
+
+    - name: Download Linux 32-bit
+      uses: actions/download-artifact@v4
+      with:
+        name: quake32-linux
+        path: artifacts/
+
+    - name: Download Linux 64-bit
+      uses: actions/download-artifact@v4
+      with:
+        name: quake64-linux
+        path: artifacts/
+
+    - name: Download macOS 32-bit
+      uses: actions/download-artifact@v4
+      with:
+        name: quake32-macos
+        path: artifacts/
+
+    - name: Download macOS 64-bit
+      uses: actions/download-artifact@v4
+      with:
+        name: quake64-macos
+        path: artifacts/
+
+    - name: Delete old release (if exists)
+      run: gh release delete "latest" --cleanup-tag -y || true
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create new release
+      run: gh release create -t "latest" "latest" artifacts/* -n "Latest multiplatform release"
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
