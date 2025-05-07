@@ -169,9 +169,7 @@ static int RGFWToQuakeKey(void)
 		case RGFW_insert:key = K_INS; break;
 
 		default:
-			key = win->event.keyChar;
-			if (key >= 'A' && key <= 'Z')
-				key = key - 'A' + 'a';
+			key = win->event.key;
 			break;
 	} 
 
@@ -207,10 +205,11 @@ static void HandleEvents(void)
 	while (RGFW_window_checkEvent(win)) {
 		switch (win->event.type) {
 		case RGFW_keyPressed:
-		case RGFW_keyReleased:
-			Key_Event(RGFWToQuakeKey(), win->event.type == RGFW_keyPressed);
+			Key_Event(RGFWToQuakeKey(), 1);
+            break;
+        case RGFW_keyReleased:
+			Key_Event(RGFWToQuakeKey(), 0);
 			break;
-
 		case RGFW_mousePosChanged:
 			if (mouse_active) {
 				mx += win->event.vector.x * 2;
@@ -235,7 +234,18 @@ static void HandleEvents(void)
 			win_x = win->r.x;
 			win_y = win->r.y;
 			break;
-		}
+
+        case RGFW_focusOut:
+	        RGFW_window_mouseUnhold(win);
+            break;
+        case RGFW_focusIn:
+	        if (mouse_active) {
+                in_strafe.state = 0;
+	            RGFW_window_mouseUnhold(win);
+	            RGFW_window_mouseHold(win, RGFW_AREA(win->r.w / 2, win->r.h / 2));
+            }
+            break;
+        }
 	}
 
 	if (dowarp) {
