@@ -10,6 +10,11 @@ ifneq (,$(filter $(detected_OS),Linux NetBSD FreeBSD OpenBSD))
 	TARGET = unix
 endif
 
+ifneq (,$(filter $(detected_OS),NetBSD))
+	INCLUDES += -I/usr/X11R7/include
+	LIBRARIES += -L/usr/X11R7/lib
+endif
+
 ifeq ($(TARGET),unix)
 OPENGL_CFLAGS = 
 OPENGL_LIBS = -lGL -lGLU 
@@ -27,8 +32,8 @@ EXEC =
 
 CC = $(GCC_PREFIX)gcc
 WINDRES = $(GCC_PREFIX)windres
-CFLAGS = $(DEBUG) -fomit-frame-pointer -funroll-loops -fcommon -DGL_EXT_SHARED -DGLQUAKE -Iinclude -Wno-error=implicit-function-declaration $(OPENGL_CFLAGS)
-LDFLAGS =
+CFLAGS = $(DEBUG) -fomit-frame-pointer -funroll-loops -fcommon -DGL_EXT_SHARED -DGLQUAKE -Iinclude -Wno-error=implicit-function-declaration $(INCLUDES) $(OPENGL_CFLAGS)
+LDFLAGS = $(LIBRARIES)
 LIBS = $(OPENGL_LIBS)
 
 .PHONY: all clean
