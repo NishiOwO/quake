@@ -36,20 +36,30 @@ unsigned char dma_buffer[BUFFER_SIZE];
 ma_event ev;
 ma_mutex mx;
 
+extern ma_bool8 ready = MA_FALSE;
+
 void data_callback(ma_device* device, void* out, const void* in, ma_uint32 frame){
-	int sz = 0;
-	memset(out, 0, frame * 4);
+    int sz = 0;
+    memset(out, 0, frame * 4);
 
-	ma_event_wait(&ev);
-	if(quit) return;
+    if(quit) return;
+ 
+    if (ready == MA_FALSE) {
+        return;
+    }
 
-	ma_mutex_lock(&mx);
+    ma_mutex_lock(&mx);
 	if(tbuf == 0){
 		tbuf = BUFFER_SIZE;
 	}
 	sz = tbuf > (frame * 4) ? (frame * 4) : tbuf;
 	memcpy(out, dma_buffer + (BUFFER_SIZE - tbuf), sz);
 	tbuf -= sz;
+
+    if (tbuf <= 0) {
+        ready = MA_FALSE;
+    }
+
 	total += sz / 2;
 	ma_mutex_unlock(&mx);
 }
@@ -84,7 +94,8 @@ qboolean SNDDMA_Init(void)
 		return 0;
 	}
 	Con_Printf("16 bit stereo sound initialized\n");
-	ma_device_start(&device);
+    ma_device_start(&device);
+
 	shm->samplebits = 16;
 	shm->channels = config.playback.channels;
 	shm->speed = config.sampleRate;
@@ -138,5 +149,6 @@ Send sound to device if buffer isn't really the dma buffer
 void SNDDMA_Submit(void)
 {
 	ma_event_signal(&ev);
+    ready = MA_TRUE;
 }
 
