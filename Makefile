@@ -32,7 +32,7 @@ EXEC =
 
 CC = $(GCC_PREFIX)gcc
 WINDRES = $(GCC_PREFIX)windres
-CFLAGS = $(DEBUG) -fomit-frame-pointer -funroll-loops -fcommon -DGL_EXT_SHARED -DGLQUAKE -Iinclude -Wno-error=implicit-function-declaration $(INCLUDES) $(OPENGL_CFLAGS)
+CFLAGS = $(DEBUG) -fomit-frame-pointer -funroll-loops -fcommon -DGL_EXT_SHARED -DGLQUAKE -Iinclude -Wno-error=implicit-function-declaration $(INCLUDES) $(OPENGL_CFLAGS) -std=c99 -D_DEFAULT_SOURCE
 LDFLAGS = $(LIBRARIES)
 LIBS = $(OPENGL_LIBS)
 
