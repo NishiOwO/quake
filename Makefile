@@ -1,5 +1,6 @@
 TARGET = windows
 DEBUG = -O2
+SND = ma
 
 detected_OS := $(shell uname 2>/dev/null || echo Unknown)
 
@@ -39,7 +40,7 @@ LIBS = $(OPENGL_LIBS)
 .PHONY: all clean
 .SUFFIXES: .c .o .rc .res
 
-OBJS = $(shell cat list)
+OBJS = $(shell cat list) src/snd_$(SND).o
 
 ifdef QUAKE2
 CFLAGS += -DQUAKE2
@@ -59,6 +60,12 @@ LIBS += -lgdi32 -lwsock32
 EXEC = .exe
 endif
 
+ifeq ($(SND),sdl2)
+CFLAGS += `sdl2-config --cflags`
+LIBS += `sdl2-config --libs`
+else ifeq ($(SND),ma)
+OBJS += src/miniaudio.o
+endif
 
 all:
 ifdef QUAKE2

@@ -68,6 +68,7 @@ void data_callback(ma_device* device, void* out, const void* in, ma_uint32 frame
 	int fsz = frame * 4;
 	while(fsz > 0){
 		int sz = 0;
+		int i;
 		if(fsz > (buf->size - buf->pos)){
 			sz = buf->size - buf->pos;
 		}else{

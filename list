@@ -46,7 +46,5 @@ src/cd.o
 src/sound.o
 src/gl.o
 src/stb_ds.o
-src/miniaudio.o
 src/snd_mem.o
-src/snd_ma.o
 src/mix.o
