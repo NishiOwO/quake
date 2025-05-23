@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include <miniaudio.h>
-#define NEW_WAY
+//#define NEW_WAY
 
 #include "quakedef.h"
 #ifdef NEW_WAY
