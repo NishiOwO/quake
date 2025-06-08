@@ -18,8 +18,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include <miniaudio.h>
+//#define NEW_WAY
 
 #include "quakedef.h"
+#ifdef NEW_WAY
+#include <stb_ds.h>
+#endif
 
 int snd_inited;
 
@@ -29,17 +33,26 @@ ma_device_config config;
 int total = 0;
 int tbuf = 0;
 int quit = 0;
-
 #define BUFFER_SIZE		8192
 unsigned char dma_buffer[BUFFER_SIZE];
 
 ma_event ev;
 ma_mutex mx;
 
-extern ma_bool8 ready = MA_FALSE;
+ma_bool8 ready = MA_FALSE;
+
+#ifdef NEW_WAY
+typedef struct buffer_t {
+	int pos;
+	int size;
+	unsigned char* buffer;
+} buffer_t;
+int buffer_size = 0;
+buffer_t* buffer_list = NULL;
+#endif
 
 void data_callback(ma_device* device, void* out, const void* in, ma_uint32 frame){
-    int sz = 0;
+    int bsz = 0;
     memset(out, 0, frame * 4);
 
     if(quit) return;
@@ -49,18 +62,47 @@ void data_callback(ma_device* device, void* out, const void* in, ma_uint32 frame
     }
 
     ma_mutex_lock(&mx);
+#ifdef NEW_WAY
+    if(arrlen(buffer_list) > 0){
+	buffer_t* buf = &buffer_list[0];
+	int fsz = frame * 4;
+	while(fsz > 0){
+		int sz = 0;
+		int i;
+		if(fsz > (buf->size - buf->pos)){
+			sz = buf->size - buf->pos;
+		}else{
+			sz = fsz;
+		}
+		memcpy(bsz + (unsigned char*)out, buf->buffer + buf->pos, sz);
+		buf->pos += sz;
+		fsz -= sz;
+		bsz += sz;
+		if(buf->pos >= buf->size){
+			free(buf->buffer);
+			arrdel(buffer_list, 0);
+			buf = &buffer_list[0];
+		}
+		if(arrlen(buffer_list) == 0) break;
+	}
+    }
+
+    total += bsz / 4;
+#else
 	if(tbuf == 0){
 		tbuf = BUFFER_SIZE;
 	}
-	sz = tbuf > (frame * 4) ? (frame * 4) : tbuf;
-	memcpy(out, dma_buffer + (BUFFER_SIZE - tbuf), sz);
-	tbuf -= sz;
+	bsz = tbuf > (frame * 4) ? (frame * 4) : tbuf;
+	memcpy(out, dma_buffer + (BUFFER_SIZE - tbuf), bsz);
+	tbuf -= bsz;
 
     if (tbuf <= 0) {
         ready = MA_FALSE;
     }
 
-	total += sz / 2;
+    total += bsz / 2;
+#endif
+
 	ma_mutex_unlock(&mx);
 }
 
@@ -87,8 +129,8 @@ qboolean SNDDMA_Init(void)
 	config = ma_device_config_init(ma_device_type_playback);
 	config.playback.format = ma_format_s16;
 	config.playback.channels = 2;
-	config.sampleRate = 11025;
-//	config.sampleRate = 44100;
+	//config.sampleRate = 22050;
+	config.sampleRate = 44100;
 	config.dataCallback = data_callback;
 	if(ma_device_init(NULL, &config, &device) != MA_SUCCESS){
 		return 0;
@@ -113,18 +155,26 @@ qboolean SNDDMA_Init(void)
 
 int SNDDMA_GetDMAPos(void)
 {
+#ifdef NEW_WAY
+	return 0;
+#else
 	if (!snd_inited)
 		return (0);
 
 	return (BUFFER_SIZE - tbuf) % BUFFER_SIZE;
+#endif
 }
 
 int SNDDMA_GetSamples(void)
 {
+#ifdef NEW_WAY
+	return total;
+#else
 	if (!snd_inited)
 		return (0);
 
 	return total;
+#endif
 }
 
 void SNDDMA_Shutdown(void)
@@ -146,9 +196,28 @@ SNDDMA_Submit
 Send sound to device if buffer isn't really the dma buffer
 ===============
 */
+
+#ifdef NEW_WAY
+int oldtime = 0;
+#endif
 void SNDDMA_Submit(void)
 {
+#ifdef NEW_WAY
+	int t1 = paintedtime;
+	int t2 = oldtime;
+	buffer_t buf;
+	oldtime = paintedtime;
+	buf.size = (t1 - t2) * 4;
+	buf.pos = 0;
+
+	buf.buffer = malloc(buf.size);
+	memcpy(buf.buffer, dma_buffer, buf.size);
+	ma_mutex_lock(&mx);
+	arrput(buffer_list, buf);
+	ma_mutex_unlock(&mx);
+#else
 	ma_event_signal(&ev);
-    ready = MA_TRUE;
+#endif
+	ready = MA_TRUE;
 }
 

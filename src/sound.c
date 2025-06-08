@@ -814,6 +814,8 @@ void GetSoundtime(void)
 
 // it is possible to miscount buffers if it has wrapped twice between
 // calls to S_Update.  Oh well.
+	soundtime = SNDDMA_GetSamples();
+	return;
 #ifdef __sun__
 	soundtime = SNDDMA_GetSamples();
 #else
@@ -849,10 +851,10 @@ void S_ExtraUpdate (void)
 	S_Update_();
 }
 
+unsigned        endtime;
 void S_Update_(void)
 {
-	unsigned        endtime;
-	int				samps;
+	int samps;
 	
 	if (!sound_started || (snd_blocked > 0))
 		return;
