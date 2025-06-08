@@ -240,7 +240,6 @@ static void HandleEvents(void)
             break;
         case RGFW_focusIn:
 	        if (mouse_active) {
-                in_strafe.state = 0;
 	            RGFW_window_mouseUnhold(win);
 	            RGFW_window_mouseHold(win, RGFW_AREA(win->r.w / 2, win->r.h / 2));
             }
