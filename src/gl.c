@@ -16,7 +16,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -44,7 +44,7 @@ static RGFW_window* win;
 unsigned short	d_8to16table[256];
 unsigned		d_8to24table[256];
 unsigned char	d_15to8table[65536];
- 
+
 static qboolean        mouse_avail;
 static qboolean        mouse_active;
 static int   mx, my;
@@ -52,8 +52,6 @@ static int	old_mouse_x, old_mouse_y;
 
 qboolean dgamouse = false;
 qboolean vidmode_ext = false;
-
-static int win_x, win_y;
 
 static int scr_width, scr_height;
 
@@ -97,15 +95,14 @@ void D_EndDirectRect (int x, int y, int width, int height)
 {
 }
 
-static int RGFWToQuakeKey(void)
+static int RGFWToQuakeKey(u32 keycode)
 {
-
 	int key;
 	char buf[64];
 
 	key = 0;
 
-	switch(win->event.key)
+	switch(keycode)
 	{
 		case RGFW_pageUp:	 key = K_PGUP; break;
 
@@ -116,7 +113,7 @@ static int RGFWToQuakeKey(void)
 		case RGFW_end:	 key = K_END; break;
 
 		case RGFW_left:	 key = K_LEFTARROW; break;
- 
+
 		case RGFW_right:	key = K_RIGHTARROW;		break;
 
 		case RGFW_down:	 key = K_DOWNARROW; break;
@@ -160,27 +157,29 @@ static int RGFWToQuakeKey(void)
 		case RGFW_shiftL:
 		case RGFW_shiftR:	key = K_SHIFT;		break;
 
-		case RGFW_controlL: 
+		case RGFW_controlL:
 		case RGFW_controlR:	key = K_CTRL;		 break;
 
-		case RGFW_altL:	
+		case RGFW_altL:
 		case RGFW_altR: key = K_ALT;			break;
 
 		case RGFW_insert:key = K_INS; break;
 
 		default:
-			key = win->event.key;
+			key = keycode;
 			break;
-	} 
+	}
 
 	return key;
 }
 
 static void install_grabs(void)
 {
-	/* TODO */
+	i32 width, height;
+	RGFW_window_getSize(win, &width, &height);
+
 	RGFW_window_showMouse(win, 0);
-	RGFW_window_mouseHold(win, RGFW_AREA(win->r.w / 2, win->r.h / 2));
+	RGFW_window_holdMouse(win);
 	mouse_active = true;
 }
 
@@ -191,8 +190,55 @@ static void uninstall_grabs(void)
 
 	/* TODO */
 
-	RGFW_window_mouseUnhold(win);
+	RGFW_window_unholdMouse(win);
 	mouse_active = false;
+}
+
+void focusfunc(RGFW_window* win, u8 inFocus) {
+	if (inFocus == RGFW_FALSE) {
+		RGFW_window_unholdMouse(win);
+	} else {
+		if (mouse_active) {
+			i32 width, height;
+			RGFW_window_getSize(win, &width, &height);
+
+			RGFW_window_unholdMouse(win);
+			RGFW_window_holdMouse(win);
+		}
+	}
+}
+
+void mouseposfunc(RGFW_window* win, i32 x, i32 y, float vecX, float vecY) {
+	if (mouse_active) {
+		mx += vecX * 2;
+		my += vecY * 2;
+	}
+}
+
+void keyfunc(RGFW_window* win, RGFW_key key, u8 keyChar, RGFW_keymod keyMod, RGFW_bool repeat, RGFW_bool pressed) {
+   	Key_Event(RGFWToQuakeKey(key), pressed);
+}
+
+void mousebuttonfunc(RGFW_window* win, u8 button, u8 pressed) {
+	int b = -1;
+	if (button== RGFW_mouseLeft)
+		b = 0;
+	else if (button == RGFW_mouseMiddle)
+		b = 2;
+	else if (button== RGFW_mouseRight)
+		b = 1;
+	if (b >= 0)
+		Key_Event(K_MOUSE1 + b, pressed);
+}
+
+void scrollfunc(RGFW_window* win, float x, float y) {
+	if (y > 0 ) {
+		Key_Event(K_MWHEELUP, true);
+		Key_Event(K_MWHEELUP, false);
+	} else if (y < 0) {
+		Key_Event(K_MWHEELDOWN, true);
+		Key_Event(K_MWHEELDOWN, false);
+	}
 }
 
 static void HandleEvents(void)
@@ -202,50 +248,7 @@ static void HandleEvents(void)
 	int mwx = vid.width/2;
 	int mwy = vid.height/2;
 
-	while (RGFW_window_checkEvent(win)) {
-		switch (win->event.type) {
-		case RGFW_keyPressed:
-			Key_Event(RGFWToQuakeKey(), 1);
-            break;
-        case RGFW_keyReleased:
-			Key_Event(RGFWToQuakeKey(), 0);
-			break;
-		case RGFW_mousePosChanged:
-			if (mouse_active) {
-				mx += win->event.vector.x * 2;
-				my += win->event.vector.y * 2;
-			}
-			break;
-
-		case RGFW_mouseButtonReleased:
-		case RGFW_mouseButtonPressed:
-			b=-1;
-			if (win->event.button == RGFW_mouseLeft)
-				b = 0;
-			else if (win->event.button == RGFW_mouseMiddle)
-				b = 2;
-			else if (win->event.button == RGFW_mouseRight)
-				b = 1;
-			if (b>=0)
-				Key_Event(K_MOUSE1 + b, win->event.type == RGFW_mouseButtonPressed);
-			break;
-
-		case RGFW_windowMoved :
-			win_x = win->r.x;
-			win_y = win->r.y;
-			break;
-
-        case RGFW_focusOut:
-	        RGFW_window_mouseUnhold(win);
-            break;
-        case RGFW_focusIn:
-	        if (mouse_active) {
-	            RGFW_window_mouseUnhold(win);
-	            RGFW_window_mouseHold(win, RGFW_AREA(win->r.w / 2, win->r.h / 2));
-            }
-            break;
-        }
-	}
+	RGFW_pollEvents();
 
 	if (dowarp) {
 		/* move the mouse to the window center again */
@@ -253,7 +256,7 @@ static void HandleEvents(void)
 
 }
 
-static void IN_DeactivateMouse( void ) 
+static void IN_DeactivateMouse( void )
 {
 	if (!mouse_avail || !win)
 		return;
@@ -264,7 +267,7 @@ static void IN_DeactivateMouse( void )
 	}
 }
 
-static void IN_ActivateMouse( void ) 
+static void IN_ActivateMouse( void )
 {
 	if (!mouse_avail || !win)
 		return;
@@ -339,7 +342,7 @@ void	VID_SetPalette (unsigned char *palette)
 		g = pal[1];
 		b = pal[2];
 		pal += 3;
-		
+
 		v = (255<<24) + (r<<0) + (g<<8) + (b<<16);
 		*table++ = v;
 	}
@@ -434,7 +437,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 void GL_EndRendering (void)
 {
 	glFlush();
-	RGFW_window_swapBuffers(win);
+	RGFW_window_swapBuffers_OpenGL(win);
 }
 
 qboolean VID_Is8bit(void)
@@ -482,7 +485,7 @@ void VID_Init(unsigned char *palette)
 	int actualWidth, actualHeight;
 
 	mouse_avail = 1;
-	
+
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
 	vid.colormap = host_colormap;
@@ -518,15 +521,22 @@ void VID_Init(unsigned char *palette)
 	if (vid.conheight < 200)
 		vid.conheight = 200;
 
-	win = RGFW_createWindow("Quake", RGFW_RECT(0, 0, width, height), RGFW_windowCenter);
-	RGFW_window_makeCurrent(win);
+	win = RGFW_createWindow("Quake", 0, 0, width, height, RGFW_windowCenter | RGFW_windowOpenGL);
+	RGFW_window_makeCurrentWindow_OpenGL(win);
+
+	RGFW_setMousePosCallback(mouseposfunc);
+	RGFW_setMouseScrollCallback(scrollfunc);
+	RGFW_setFocusCallback(focusfunc);
+	RGFW_setKeyCallback(keyfunc);
+	RGFW_setMouseButtonCallback(mousebuttonfunc);
 
 	if(fullscreen){
 		RGFW_monitor mon = RGFW_window_getMonitor(win);
-		RGFW_window_resize(win, mon.mode.area);
+		width = mon.mode.w;
+		height = mon.mode.h;
+
+		RGFW_window_resize(win, width, height);
 		RGFW_window_setFullscreen(win, 1);
-		width = win->r.w;
-		height = win->r.h;
 	}
 
 	scr_width = width;
@@ -599,7 +609,7 @@ void IN_MouseMove (usercmd_t *cmd)
 {
 	if (!mouse_avail)
 		return;
-   
+
 	if (1)
 	{
 		mx = (mx + old_mouse_x) * 0.5;
@@ -616,10 +626,10 @@ void IN_MouseMove (usercmd_t *cmd)
 		cmd->sidemove += m_side.value * mx;
 	else
 		cl.viewangles[YAW] -= m_yaw.value * mx;
-	
+
 	if (in_mlook.state & 1)
 		V_StopPitchDrift ();
-		
+
 	if ( (in_mlook.state & 1) && !(in_strafe.state & 1))
 	{
 		cl.viewangles[PITCH] += m_pitch.value * my;
