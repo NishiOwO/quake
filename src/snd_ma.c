@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include <miniaudio.h>
-//#define NEW_WAY
+#define NEW_WAY
 
 #include "quakedef.h"
 #ifdef NEW_WAY
@@ -78,6 +78,7 @@ void data_callback(ma_device* device, void* out, const void* in, ma_uint32 frame
 		buf->pos += sz;
 		fsz -= sz;
 		bsz += sz;
+		total += sz / 4;
 		if(buf->pos >= buf->size){
 			free(buf->buffer);
 			arrdel(buffer_list, 0);
@@ -86,8 +87,6 @@ void data_callback(ma_device* device, void* out, const void* in, ma_uint32 frame
 		if(arrlen(buffer_list) == 0) break;
 	}
     }
-
-    total += bsz / 4;
 #else
 	if(tbuf == 0){
 		tbuf = BUFFER_SIZE;
@@ -129,6 +128,7 @@ qboolean SNDDMA_Init(void)
 	config = ma_device_config_init(ma_device_type_playback);
 	config.playback.format = ma_format_s16;
 	config.playback.channels = 2;
+	//config.sampleRate = 8000;
 	//config.sampleRate = 22050;
 	config.sampleRate = 44100;
 	config.dataCallback = data_callback;
@@ -206,13 +206,14 @@ void SNDDMA_Submit(void)
 	int t1 = paintedtime;
 	int t2 = oldtime;
 	buffer_t buf;
-	oldtime = paintedtime;
 	buf.size = (t1 - t2) * 4;
 	buf.pos = 0;
+	if(buf.size == 0) return;
+	oldtime = paintedtime;
 
 	buf.buffer = malloc(buf.size);
-	memcpy(buf.buffer, dma_buffer, buf.size);
 	ma_mutex_lock(&mx);
+	memcpy(buf.buffer, dma_buffer, buf.size);
 	arrput(buffer_list, buf);
 	ma_mutex_unlock(&mx);
 #else
