@@ -33,7 +33,7 @@ ma_device_config config;
 int total = 0;
 int tbuf = 0;
 int quit = 0;
-#define BUFFER_SIZE		8192
+#define BUFFER_SIZE		4096*4
 unsigned char dma_buffer[BUFFER_SIZE];
 
 ma_event ev;
@@ -132,6 +132,7 @@ qboolean SNDDMA_Init(void)
 	//config.sampleRate = 22050;
 	config.sampleRate = 44100;
 	config.dataCallback = data_callback;
+	config.periodSizeInFrames = 4096;
 	if(ma_device_init(NULL, &config, &device) != MA_SUCCESS){
 		return 0;
 	}

@@ -568,6 +568,7 @@ void VID_Init(unsigned char *palette)
 
 void Sys_SendKeyEvents(void)
 {
+	if(win == NULL) return;
 	HandleEvents();
 }
 

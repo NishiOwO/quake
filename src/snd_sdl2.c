@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 int snd_inited;
 
 int total = 0;
-#define BUFFER_SIZE		8192
+#define BUFFER_SIZE		4096*4
 unsigned char dma_buffer[BUFFER_SIZE];
 
 SDL_AudioSpec spec;
@@ -53,7 +53,7 @@ qboolean SNDDMA_Init(void)
 	spec.freq = 44100;
 	spec.format = AUDIO_S16;
 	spec.channels = 2;
-	spec.samples = 2048;
+	spec.samples = 4096;
 	spec.callback = NULL;
 	spec.userdata = NULL;
 
