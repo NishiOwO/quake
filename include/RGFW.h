@@ -1784,7 +1784,7 @@ struct RGFW_info {
 
     RGFW_monitors monitors;
 
-    #ifdef __linux__
+    #ifdef RGFW_UNIX
 	    int eventWait_forceStop[3];
     #endif
 

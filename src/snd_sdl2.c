@@ -53,7 +53,7 @@ qboolean SNDDMA_Init(void)
 	spec.freq = 44100;
 	spec.format = AUDIO_S16;
 	spec.channels = 2;
-	spec.samples = 4096;
+	spec.samples = sizeof(dma_buffer) / 4;
 	spec.callback = NULL;
 	spec.userdata = NULL;
 

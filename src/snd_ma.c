@@ -132,7 +132,7 @@ qboolean SNDDMA_Init(void)
 	//config.sampleRate = 22050;
 	config.sampleRate = 44100;
 	config.dataCallback = data_callback;
-	config.periodSizeInFrames = 4096;
+	config.periodSizeInFrames = sizeof(dma_buffer) / 4;
 	if(ma_device_init(NULL, &config, &device) != MA_SUCCESS){
 		return 0;
 	}
