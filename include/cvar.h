@@ -25,11 +25,11 @@ cvar_t variables are used to hold scalar or string variables that can be changed
 in C code.
 
 it is sufficient to initialize a cvar_t with just the first two fields, or
-you can add a ,true flag for variables that you want saved to the configuration
+you can add a ,qtrue flag for variables that you want saved to the configuration
 file when the game is quit:
 
 cvar_t	r_draworder = {"r_draworder","1"};
-cvar_t	scr_screensize = {"screensize","1",true};
+cvar_t	scr_screensize = {"screensize","1",qtrue};
 
 Cvars must be registered before use, or they will have a 0 value instead of the float interpretation of the string.  Generally, all cvar_t declarations should be registered in the apropriate init function before any console commands are executed:
 Cvar_RegisterVariable (&host_framerate);
@@ -57,7 +57,7 @@ typedef struct cvar_s
 {
 	char	*name;
 	char	*string;
-	qboolean archive;		// set to true to cause it to be saved to vars.rc
+	qboolean archive;		// set to qtrue to cause it to be saved to vars.rc
 	qboolean server;		// notifies players when changed
 	float	value;
 	struct cvar_s *next;
@@ -85,12 +85,12 @@ char 	*Cvar_CompleteVariable (char *partial);
 
 qboolean Cvar_Command (void);
 // called by Cmd_ExecuteString when Cmd_Argv(0) doesn't match a known
-// command.  Returns true if the command was a variable reference that
+// command.  Returns qtrue if the command was a variable reference that
 // was handled. (print or change)
 
 void 	Cvar_WriteVariables (FILE *f);
 // Writes lines containing "set variable value" for all variables
-// with the archive flag set to true.
+// with the archive flag set to qtrue.
 
 cvar_t *Cvar_FindVar (char *var_name);
 

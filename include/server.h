@@ -34,7 +34,7 @@ typedef enum {ss_loading, ss_active} server_state_t;
 
 typedef struct
 {
-	qboolean	active;				// false if only a net client
+	qboolean	active;				// qfalse if only a net client
 
 	qboolean	paused;
 	qboolean	loadgame;			// handle connections specially
@@ -77,8 +77,8 @@ typedef struct
 
 typedef struct client_s
 {
-	qboolean		active;				// false = client is free
-	qboolean		spawned;			// false = don't send datagrams
+	qboolean		active;				// qfalse = client is free
+	qboolean		spawned;			// qfalse = don't send datagrams
 	qboolean		dropasap;			// has been told to go to another level
 	qboolean		privileged;			// can execute any host command
 	qboolean		sendsignon;			// only valid before spawned

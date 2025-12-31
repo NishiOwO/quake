@@ -52,7 +52,7 @@ plane_t	*HitPlane (vec3_t start, vec3_t end)
 // fill in a default trace
 	memset (&trace, 0, sizeof(trace_t));
 	trace.fraction = 1;
-	trace.allsolid = true;
+	trace.allsolid = qtrue;
 	VectorCopy (end, trace.endpos);
 
 	SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, start, end, &trace);

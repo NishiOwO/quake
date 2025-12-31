@@ -110,7 +110,7 @@ void R_Envmap_f (void)
 
 	glDrawBuffer  (GL_FRONT);
 	glReadBuffer  (GL_FRONT);
-	envmap = true;
+	envmap = qtrue;
 
 	r_refdef.vrect.x = 0;
 	r_refdef.vrect.y = 0;
@@ -157,7 +157,7 @@ void R_Envmap_f (void)
 	glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	COM_WriteFile ("env5.rgb", buffer, sizeof(buffer));		
 
-	envmap = false;
+	envmap = qfalse;
 	glDrawBuffer  (GL_BACK);
 	glReadBuffer  (GL_BACK);
 	GL_EndRendering ();
@@ -304,7 +304,7 @@ void R_TranslatePlayerSkin (int playernum)
 
 
 	// don't mipmap these, because it takes too long
-	GL_Upload8 (translated, paliashdr->skinwidth, paliashdr->skinheight, false, false, true);
+	GL_Upload8 (translated, paliashdr->skinwidth, paliashdr->skinheight, qfalse, qfalse, qtrue);
 #else
 	scaled_width = gl_max_size.value < 512 ? gl_max_size.value : 512;
 	scaled_height = gl_max_size.value < 256 ? gl_max_size.value : 256;
@@ -336,7 +336,7 @@ void R_TranslatePlayerSkin (int playernum)
 			}
 		}
 
-		GL_Upload8_EXT ((byte *)pixels, scaled_width, scaled_height, false, false);
+		GL_Upload8_EXT ((byte *)pixels, scaled_width, scaled_height, qfalse, qfalse);
 		return;
 	}
 

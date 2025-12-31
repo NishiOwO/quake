@@ -42,7 +42,7 @@ void Host_Quit_f (void)
 		return;
 	}
 	CL_Disconnect ();
-	Host_ShutdownServer(false);		
+	Host_ShutdownServer(qfalse);		
 
 	Sys_Quit ();
 }
@@ -161,13 +161,13 @@ void Host_Noclip_f (void)
 
 	if (sv_player->v.movetype != MOVETYPE_NOCLIP)
 	{
-		noclip_anglehack = true;
+		noclip_anglehack = qtrue;
 		sv_player->v.movetype = MOVETYPE_NOCLIP;
 		SV_ClientPrintf ("noclip ON\n");
 	}
 	else
 	{
-		noclip_anglehack = false;
+		noclip_anglehack = qfalse;
 		sv_player->v.movetype = MOVETYPE_WALK;
 		SV_ClientPrintf ("noclip OFF\n");
 	}
@@ -264,7 +264,7 @@ void Host_Map_f (void)
 	cls.demonum = -1;		// stop demo loop in case this fails
 
 	CL_Disconnect ();
-	Host_ShutdownServer(false);		
+	Host_ShutdownServer(qfalse);		
 
 	key_dest = key_game;			// remove console or menu
 	SCR_BeginLoadingPlaque ();
@@ -633,8 +633,8 @@ void Host_Loadgame_f (void)
 		Con_Printf ("Couldn't load map\n");
 		return;
 	}
-	sv.paused = true;		// pause until all clients connect
-	sv.loadgame = true;
+	sv.paused = qtrue;		// pause until all clients connect
+	sv.loadgame = qtrue;
 
 // load the light styles
 
@@ -680,12 +680,12 @@ void Host_Loadgame_f (void)
 
 			ent = EDICT_NUM(entnum);
 			memset (&ent->v, 0, progs->entityfields * 4);
-			ent->free = false;
+			ent->free = qfalse;
 			ED_ParseEdict (start, ent);
 	
 		// link it into the bsp tree
 			if (!ent->free)
-				SV_LinkEdict (ent, false);
+				SV_LinkEdict (ent, qfalse);
 		}
 
 		entnum++;
@@ -843,12 +843,12 @@ int LoadGamestate(char *level, char *startspot)
 
 		ent = EDICT_NUM(entnum);
 		memset (&ent->v, 0, progs->entityfields * 4);
-		ent->free = false;
+		ent->free = qfalse;
 		ED_ParseEdict (start, ent);
 	
 		// link it into the bsp tree
 		if (!ent->free)
-			SV_LinkEdict (ent, false);
+			SV_LinkEdict (ent, qfalse);
 	}
 	
 //	sv.num_edicts = entnum;
@@ -971,13 +971,13 @@ void Host_Please_f (void)
 		cl = &svs.clients[j];
 		if (cl->privileged)
 		{
-			cl->privileged = false;
+			cl->privileged = qfalse;
 			cl->edict->v.flags = (int)cl->edict->v.flags & ~(FL_GODMODE|FL_NOTARGET);
 			cl->edict->v.movetype = MOVETYPE_WALK;
-			noclip_anglehack = false;
+			noclip_anglehack = qfalse;
 		}
 		else
-			cl->privileged = true;
+			cl->privileged = qtrue;
 	}
 
 	if (Cmd_Argc () != 2)
@@ -991,13 +991,13 @@ void Host_Please_f (void)
 		{
 			if (cl->privileged)
 			{
-				cl->privileged = false;
+				cl->privileged = qfalse;
 				cl->edict->v.flags = (int)cl->edict->v.flags & ~(FL_GODMODE|FL_NOTARGET);
 				cl->edict->v.movetype = MOVETYPE_WALK;
-				noclip_anglehack = false;
+				noclip_anglehack = qfalse;
 			}
 			else
-				cl->privileged = true;
+				cl->privileged = qtrue;
 			break;
 		}
 	}
@@ -1012,14 +1012,14 @@ void Host_Say(qboolean teamonly)
 	int		j;
 	char	*p;
 	unsigned char	text[64];
-	qboolean	fromServer = false;
+	qboolean	fromServer = qfalse;
 
 	if (cmd_source == src_command)
 	{
 		if (cls.state == ca_dedicated)
 		{
-			fromServer = true;
-			teamonly = false;
+			fromServer = qtrue;
+			teamonly = qfalse;
 		}
 		else
 		{
@@ -1071,13 +1071,13 @@ void Host_Say(qboolean teamonly)
 
 void Host_Say_f(void)
 {
-	Host_Say(false);
+	Host_Say(qfalse);
 }
 
 
 void Host_Say_Team_f(void)
 {
-	Host_Say(true);
+	Host_Say(qtrue);
 }
 
 
@@ -1268,7 +1268,7 @@ void Host_PreSpawn_f (void)
 	SZ_Write (&host_client->message, sv.signon.data, sv.signon.cursize);
 	MSG_WriteByte (&host_client->message, svc_signonnum);
 	MSG_WriteByte (&host_client->message, 2);
-	host_client->sendsignon = true;
+	host_client->sendsignon = qtrue;
 }
 
 /*
@@ -1298,7 +1298,7 @@ void Host_Spawn_f (void)
 	if (sv.loadgame)
 	{	// loaded games are fully inited allready
 		// if this is the last client to be connected, unpause
-		sv.paused = false;
+		sv.paused = qfalse;
 	}
 	else
 	{
@@ -1392,7 +1392,7 @@ void Host_Spawn_f (void)
 
 	MSG_WriteByte (&host_client->message, svc_signonnum);
 	MSG_WriteByte (&host_client->message, 3);
-	host_client->sendsignon = true;
+	host_client->sendsignon = qtrue;
 }
 
 /*
@@ -1408,7 +1408,7 @@ void Host_Begin_f (void)
 		return;
 	}
 
-	host_client->spawned = true;
+	host_client->spawned = qtrue;
 }
 
 //===========================================================================
@@ -1427,7 +1427,7 @@ void Host_Kick_f (void)
 	char		*message = NULL;
 	client_t	*save;
 	int			i;
-	qboolean	byNumber = false;
+	qboolean	byNumber = qfalse;
 
 	if (cmd_source == src_command)
 	{
@@ -1450,7 +1450,7 @@ void Host_Kick_f (void)
 		if (!svs.clients[i].active)
 			return;
 		host_client = &svs.clients[i];
-		byNumber = true;
+		byNumber = qtrue;
 	}
 	else
 	{
@@ -1494,7 +1494,7 @@ void Host_Kick_f (void)
 			SV_ClientPrintf ("Kicked by %s: %s\n", who, message);
 		else
 			SV_ClientPrintf ("Kicked by %s\n", who);
-		SV_DropClient (false);
+		SV_DropClient (qfalse);
 	}
 
 	host_client = save;
@@ -1696,7 +1696,7 @@ void Host_Viewmodel_f (void)
 	if (!e)
 		return;
 
-	m = Mod_ForName (Cmd_Argv(1), false);
+	m = Mod_ForName (Cmd_Argv(1), qfalse);
 	if (!m)
 	{
 		Con_Printf ("Can't load %s\n", Cmd_Argv(1));

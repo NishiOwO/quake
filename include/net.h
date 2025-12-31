@@ -277,7 +277,7 @@ struct qsocket_s	*NET_Connect (char *host);
 // called by client to connect to a host.  Returns -1 if not able to
 
 qboolean NET_CanSendMessage (qsocket_t *sock);
-// Returns true or false if the given qsocket can currently accept a
+// Returns qtrue or qfalse if the given qsocket can currently accept a
 // message to be transmitted.
 
 int			NET_GetMessage (struct qsocket_s *sock);
@@ -314,7 +314,7 @@ typedef struct _PollProcedure
 {
 	struct _PollProcedure	*next;
 	double					nextTime;
-	void					(*procedure)();
+	void					(*procedure)(void* arg);
 	void					*arg;
 } PollProcedure;
 

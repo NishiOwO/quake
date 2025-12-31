@@ -27,8 +27,8 @@ typedef struct
 
 typedef struct
 {
-	qboolean	allsolid;	// if true, plane is not valid
-	qboolean	startsolid;	// if true, the initial point was in a solid area
+	qboolean	allsolid;	// if qtrue, plane is not valid
+	qboolean	startsolid;	// if qtrue, the initial point was in a solid area
 	qboolean	inopen, inwater;
 	float	fraction;		// time completed, 1.0 = didn't hit anything
 	vec3_t	endpos;			// final position
@@ -62,7 +62,7 @@ int SV_PointContents (vec3_t p);
 int SV_TruePointContents (vec3_t p);
 // returns the CONTENTS_* value from the world at the given point.
 // does not check any entities at all
-// the non-true version remaps the water current contents to content_water
+// the non-qtrue version remaps the water current contents to content_water
 
 edict_t	*SV_TestEntityPosition (edict_t *ent);
 

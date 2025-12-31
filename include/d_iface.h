@@ -117,7 +117,7 @@ extern qboolean	r_drawculledpolys;	// 1 if driver wants clipped polygons that
 extern qboolean	r_worldpolysbacktofront;	// 1 if driver wants polygons
 											//  delivered back to front rather
 											//  than front to back
-extern qboolean	r_recursiveaffinetriangles;	// true if a driver wants to use
+extern qboolean	r_recursiveaffinetriangles;	// qtrue if a driver wants to use
 											//  recursive triangular subdivison
 											//  and vertex drawing via
 											//  D_PolysetDrawFinalVerts() past

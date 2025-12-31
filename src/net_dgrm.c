@@ -171,8 +171,8 @@ int Datagram_SendMessage (qsocket_t *sock, sizebuf_t *data)
 	if (data->cursize > NET_MAXMESSAGE)
 		Sys_Error("Datagram_SendMessage: message too big %u\n", data->cursize);
 
-	if (sock->canSend == false)
-		Sys_Error("SendMessage: called with canSend == false\n");
+	if (sock->canSend == qfalse)
+		Sys_Error("SendMessage: called with canSend == qfalse\n");
 #endif
 
 	Q_memcpy(sock->sendMessage, data->data, data->cursize);
@@ -194,7 +194,7 @@ int Datagram_SendMessage (qsocket_t *sock, sizebuf_t *data)
 	packetBuffer.sequence = BigLong(sock->sendSequence++);
 	Q_memcpy (packetBuffer.data, sock->sendMessage, dataLen);
 
-	sock->canSend = false;
+	sock->canSend = qfalse;
 
 	if (sfunc.Write (sock->socket, (byte *)&packetBuffer, packetLen, &sock->addr) == -1)
 		return -1;
@@ -227,7 +227,7 @@ int SendMessageNext (qsocket_t *sock)
 	packetBuffer.sequence = BigLong(sock->sendSequence++);
 	Q_memcpy (packetBuffer.data, sock->sendMessage, dataLen);
 
-	sock->sendNext = false;
+	sock->sendNext = qfalse;
 
 	if (sfunc.Write (sock->socket, (byte *)&packetBuffer, packetLen, &sock->addr) == -1)
 		return -1;
@@ -260,7 +260,7 @@ int ReSendMessage (qsocket_t *sock)
 	packetBuffer.sequence = BigLong(sock->sendSequence - 1);
 	Q_memcpy (packetBuffer.data, sock->sendMessage, dataLen);
 
-	sock->sendNext = false;
+	sock->sendNext = qfalse;
 
 	if (sfunc.Write (sock->socket, (byte *)&packetBuffer, packetLen, &sock->addr) == -1)
 		return -1;
@@ -282,7 +282,7 @@ qboolean Datagram_CanSendMessage (qsocket_t *sock)
 
 qboolean Datagram_CanSendUnreliableMessage (qsocket_t *sock)
 {
-	return true;
+	return qtrue;
 }
 
 
@@ -414,12 +414,12 @@ int	Datagram_GetMessage (qsocket_t *sock)
 			if (sock->sendMessageLength > 0)
 			{
 				Q_memcpy(sock->sendMessage, sock->sendMessage+MAX_DATAGRAM, sock->sendMessageLength);
-				sock->sendNext = true;
+				sock->sendNext = qtrue;
 			}
 			else
 			{
 				sock->sendMessageLength = 0;
-				sock->canSend = true;
+				sock->canSend = qtrue;
 			}
 			continue;
 		}
@@ -511,15 +511,15 @@ void NET_Stats_f (void)
 }
 
 
-static qboolean testInProgress = false;
+static qboolean testInProgress = qfalse;
 static int		testPollCount;
 static int		testDriver;
 static int		testSocket;
 
-static void Test_Poll(void);
+static void Test_Poll(void* arg);
 PollProcedure	testPollProcedure = {NULL, 0.0, Test_Poll};
 
-static void Test_Poll(void)
+static void Test_Poll(void* arg)
 {
 	struct qsockaddr clientaddr;
 	int		control;
@@ -572,7 +572,7 @@ static void Test_Poll(void)
 	else
 	{
 		dfunc.CloseSocket(testSocket);
-		testInProgress = false;
+		testInProgress = qfalse;
 	}
 }
 
@@ -621,7 +621,7 @@ JustDoIt:
 	if (testSocket == -1)
 		return;
 
-	testInProgress = true;
+	testInProgress = qtrue;
 	testPollCount = 20;
 	testDriver = net_landriverlevel;
 
@@ -640,14 +640,14 @@ JustDoIt:
 }
 
 
-static qboolean test2InProgress = false;
+static qboolean test2InProgress = qfalse;
 static int		test2Driver;
 static int		test2Socket;
 
-static void Test2_Poll(void);
+static void Test2_Poll(void* arg);
 PollProcedure	test2PollProcedure = {NULL, 0.0, Test2_Poll};
 
-static void Test2_Poll(void)
+static void Test2_Poll(void* arg)
 {
 	struct qsockaddr clientaddr;
 	int		control;
@@ -701,7 +701,7 @@ Error:
 	Con_Printf("Unexpected repsonse to Rule Info request\n");
 Done:
 	dfunc.CloseSocket(test2Socket);
-	test2InProgress = false;
+	test2InProgress = qfalse;
 	return;
 }
 
@@ -748,7 +748,7 @@ JustDoIt:
 	if (test2Socket == -1)
 		return;
 
-	test2InProgress = true;
+	test2InProgress = qtrue;
 	test2Driver = net_landriverlevel;
 
 	SZ_Clear(&net_message);
@@ -783,7 +783,7 @@ int Datagram_Init (void)
 		csock = net_landrivers[i].Init ();
 		if (csock == -1)
 			continue;
-		net_landrivers[i].initialized = true;
+		net_landrivers[i].initialized = qtrue;
 		net_landrivers[i].controlSock = csock;
 		}
 
@@ -809,7 +809,7 @@ void Datagram_Shutdown (void)
 		if (net_landrivers[i].initialized)
 		{
 			net_landrivers[i].Shutdown ();
-			net_landrivers[i].initialized = false;
+			net_landrivers[i].initialized = qfalse;
 		}
 	}
 }
@@ -1366,7 +1366,7 @@ static qsocket_t *_Datagram_Connect (char *host)
 		goto ErrorReturn;
 	}
 
-	m_return_onerror = false;
+	m_return_onerror = qfalse;
 	return sock;
 
 ErrorReturn:
@@ -1377,7 +1377,7 @@ ErrorReturn2:
 	{
 		key_dest = key_menu;
 		m_state = m_return_state;
-		m_return_onerror = false;
+		m_return_onerror = qfalse;
 	}
 	return NULL;
 }

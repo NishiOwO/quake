@@ -50,14 +50,14 @@ static qboolean        mouse_active;
 static int   mx, my;
 static int	old_mouse_x, old_mouse_y;
 
-qboolean dgamouse = false;
-qboolean vidmode_ext = false;
+qboolean dgamouse = qfalse;
+qboolean vidmode_ext = qfalse;
 
 static int scr_width, scr_height;
 
 static int default_dotclock_vidmode;
 static int num_vidmodes;
-static qboolean vidmode_active = false;
+static qboolean vidmode_active = qfalse;
 
 /*-----------------------------------------------------------------------*/
 
@@ -82,9 +82,9 @@ void (*qgl3DfxSetPaletteEXT) (GLuint *);
 
 static float vid_gamma = 1.0;
 
-qboolean is8bit = false;
-qboolean isPermedia = false;
-qboolean gl_mtexable = false;
+qboolean is8bit = qfalse;
+qboolean isPermedia = qfalse;
+qboolean gl_mtexable = qfalse;
 
 /*-----------------------------------------------------------------------*/
 void D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
@@ -180,7 +180,7 @@ static void install_grabs(void)
 
 	RGFW_window_showMouse(win, 0);
 	RGFW_window_holdMouse(win);
-	mouse_active = true;
+	mouse_active = qtrue;
 }
 
 static void uninstall_grabs(void)
@@ -191,7 +191,7 @@ static void uninstall_grabs(void)
 	/* TODO */
 
 	RGFW_window_unholdMouse(win);
-	mouse_active = false;
+	mouse_active = qfalse;
 }
 
 void focusfunc(RGFW_window* win, u8 inFocus) {
@@ -233,18 +233,18 @@ void mousebuttonfunc(RGFW_window* win, u8 button, u8 pressed) {
 
 void scrollfunc(RGFW_window* win, float x, float y) {
 	if (y > 0 ) {
-		Key_Event(K_MWHEELUP, true);
-		Key_Event(K_MWHEELUP, false);
+		Key_Event(K_MWHEELUP, qtrue);
+		Key_Event(K_MWHEELUP, qfalse);
 	} else if (y < 0) {
-		Key_Event(K_MWHEELDOWN, true);
-		Key_Event(K_MWHEELDOWN, false);
+		Key_Event(K_MWHEELDOWN, qtrue);
+		Key_Event(K_MWHEELDOWN, qfalse);
 	}
 }
 
 static void HandleEvents(void)
 {
 	int b;
-	qboolean dowarp = false;
+	qboolean dowarp = qfalse;
 	int mwx = vid.width/2;
 	int mwy = vid.height/2;
 
@@ -263,7 +263,7 @@ static void IN_DeactivateMouse( void )
 
 	if (mouse_active) {
 		uninstall_grabs();
-		mouse_active = false;
+		mouse_active = qfalse;
 	}
 }
 
@@ -275,7 +275,7 @@ static void IN_ActivateMouse( void )
 	if (!mouse_active) {
 		mx = my = 0; // don't spazz
 		install_grabs();
-		mouse_active = true;
+		mouse_active = qtrue;
 	}
 }
 
@@ -286,7 +286,7 @@ void VID_Shutdown(void)
 	if (win) {
 		RGFW_window_close(win);
 	}
-	vidmode_active = false;
+	vidmode_active = qfalse;
 	win = NULL;
 }
 
@@ -480,7 +480,7 @@ void VID_Init(unsigned char *palette)
 	char	gldir[MAX_OSPATH];
 	int width = 640, height = 480;
 	unsigned long mask;
-	qboolean fullscreen = true;
+	qboolean fullscreen = qtrue;
 	int MajorVersion, MinorVersion;
 	int actualWidth, actualHeight;
 
@@ -495,7 +495,7 @@ void VID_Init(unsigned char *palette)
 
 // set vid parameters
 	if ((i = COM_CheckParm("-window")) != 0)
-		fullscreen = false;
+		fullscreen = qfalse;
 
 	if ((i = COM_CheckParm("-width")) != 0)
 		width = atoi(com_argv[i+1]);

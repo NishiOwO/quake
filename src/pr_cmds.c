@@ -125,7 +125,7 @@ void PF_setorigin (void)
 	e = G_EDICT(OFS_PARM0);
 	org = G_VECTOR(OFS_PARM1);
 	VectorCopy (org, e->v.origin);
-	SV_LinkEdict (e, false);
+	SV_LinkEdict (e, qfalse);
 }
 
 
@@ -143,7 +143,7 @@ void SetMinMaxSize (edict_t *e, float *min, float *max, qboolean rotate)
 		if (min[i] > max[i])
 			PR_RunError ("backwards mins/maxs");
 
-	rotate = false;		// FIXME: implement rotation properly again
+	rotate = qfalse;		// FIXME: implement rotation properly again
 
 	if (!rotate)
 	{
@@ -200,7 +200,7 @@ void SetMinMaxSize (edict_t *e, float *min, float *max, qboolean rotate)
 	VectorCopy (rmax, e->v.maxs);
 	VectorSubtract (max, min, e->v.size);
 	
-	SV_LinkEdict (e, false);
+	SV_LinkEdict (e, qfalse);
 }
 
 /*
@@ -220,7 +220,7 @@ void PF_setsize (void)
 	e = G_EDICT(OFS_PARM0);
 	min = G_VECTOR(OFS_PARM1);
 	max = G_VECTOR(OFS_PARM2);
-	SetMinMaxSize (e, min, max, false);
+	SetMinMaxSize (e, min, max, qfalse);
 }
 
 
@@ -253,12 +253,12 @@ void PF_setmodel (void)
 	e->v.model = PR_SetEngineString(*check);
 	e->v.modelindex = i; //SV_ModelIndex (m);
 
-	mod = sv.models[ (int)e->v.modelindex];  // Mod_ForName (m, true);
+	mod = sv.models[ (int)e->v.modelindex];  // Mod_ForName (m, qtrue);
 	
 	if (mod)
-		SetMinMaxSize (e, mod->mins, mod->maxs, true);
+		SetMinMaxSize (e, mod->mins, mod->maxs, qtrue);
 	else
-		SetMinMaxSize (e, vec3_origin, vec3_origin, true);
+		SetMinMaxSize (e, vec3_origin, vec3_origin, qtrue);
 }
 
 /*
@@ -669,7 +669,7 @@ void PF_TraceToss (void)
 =================
 PF_checkpos
 
-Returns true if the given entity can move to the given position from it's
+Returns qtrue if the given entity can move to the given position from it's
 current position by walking or rolling.
 FIXME: make work...
 scalar checkpos (entity, vector)
@@ -1106,7 +1106,7 @@ void PF_precache_model (void)
 		if (!sv.model_precache[i])
 		{
 			sv.model_precache[i] = s;
-			sv.models[i] = Mod_ForName (s, true);
+			sv.models[i] = Mod_ForName (s, qtrue);
 			return;
 		}
 		if (!strcmp(sv.model_precache[i], s))
@@ -1123,12 +1123,12 @@ void PF_coredump (void)
 
 void PF_traceon (void)
 {
-	pr_trace = true;
+	pr_trace = qtrue;
 }
 
 void PF_traceoff (void)
 {
-	pr_trace = false;
+	pr_trace = qfalse;
 }
 
 void PF_eprint (void)
@@ -1171,7 +1171,7 @@ void PF_walkmove (void)
 	oldf = pr_xfunction;
 	oldself = pr_global_struct->self;
 	
-	G_FLOAT(OFS_RETURN) = SV_movestep(ent, move, true);
+	G_FLOAT(OFS_RETURN) = SV_movestep(ent, move, qtrue);
 	
 	
 // restore program state
@@ -1197,14 +1197,14 @@ void PF_droptofloor (void)
 	VectorCopy (ent->v.origin, end);
 	end[2] -= 256;
 	
-	trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, end, false, ent);
+	trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, end, qfalse, ent);
 
 	if (trace.fraction == 1 || trace.allsolid)
 		G_FLOAT(OFS_RETURN) = 0;
 	else
 	{
 		VectorCopy (trace.endpos, ent->v.origin);
-		SV_LinkEdict (ent, false);
+		SV_LinkEdict (ent, qfalse);
 		ent->v.flags = (int)ent->v.flags | FL_ONGROUND;
 		ent->v.groundentity = EDICT_TO_PROG(trace.ent);
 		G_FLOAT(OFS_RETURN) = 1;
@@ -1348,7 +1348,7 @@ void PF_aim (void)
 // try sending a trace straight
 	VectorCopy (pr_global_struct->v_forward, dir);
 	VectorMA (start, 2048, dir, end);
-	tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
+	tr = SV_Move (start, vec3_origin, vec3_origin, end, qfalse, ent);
 	if (tr.ent && tr.ent->v.takedamage == DAMAGE_AIM
 	&& (!teamplay.value || ent->v.team <=0 || ent->v.team != tr.ent->v.team) )
 	{
@@ -1379,7 +1379,7 @@ void PF_aim (void)
 		dist = DotProduct (dir, pr_global_struct->v_forward);
 		if (dist < bestdist)
 			continue;	// to far to turn
-		tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
+		tr = SV_Move (start, vec3_origin, vec3_origin, end, qfalse, ent);
 		if (tr.ent == check)
 		{	// can shoot at this one
 			bestdist = dist;
@@ -1642,7 +1642,7 @@ void PF_changelevel (void)
 
 	if (svs.changelevel_issued)
 		return;
-	svs.changelevel_issued = true;
+	svs.changelevel_issued = qtrue;
 
 	s1 = G_STRING(OFS_PARM0);
 	s2 = G_STRING(OFS_PARM1);
@@ -1657,7 +1657,7 @@ void PF_changelevel (void)
 // make sure we don't issue two changelevels
 	if (svs.changelevel_issued)
 		return;
-	svs.changelevel_issued = true;
+	svs.changelevel_issued = qtrue;
 	
 	s = G_STRING(OFS_PARM0);
 	Cbuf_AddText (va("changelevel %s\n",s));

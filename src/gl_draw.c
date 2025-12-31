@@ -160,9 +160,9 @@ void Scrap_Upload (void)
 
 	for (texnum=0 ; texnum<MAX_SCRAPS ; texnum++) {
 		GL_Bind(scrap_texnum + texnum);
-		GL_Upload8 (scrap_texels[texnum], BLOCK_WIDTH, BLOCK_HEIGHT, false, true);
+		GL_Upload8 (scrap_texels[texnum], BLOCK_WIDTH, BLOCK_HEIGHT, qfalse, qtrue);
 	}
-	scrap_dirty = false;
+	scrap_dirty = qfalse;
 }
 
 //=============================================================================
@@ -200,7 +200,7 @@ qpic_t *Draw_PicFromWad (char *name)
 		int		texnum;
 
 		texnum = Scrap_AllocBlock (p->width, p->height, &x, &y);
-		scrap_dirty = true;
+		scrap_dirty = qtrue;
 		k = 0;
 		for (i=0 ; i<p->height ; i++)
 			for (j=0 ; j<p->width ; j++, k++)
@@ -402,7 +402,7 @@ void Draw_Init (void)
 			draw_chars[i] = 255;	// proper transparent color
 
 	// now turn them into textures
-	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false, true);
+	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, qfalse, qtrue);
 
 	start = Hunk_LowMark();
 
@@ -461,7 +461,7 @@ void Draw_Init (void)
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	gl = (glpic_t *)conback->data;
-	gl->texnum = GL_LoadTexture ("conback", conback->width, conback->height, ncdata, false, false);
+	gl->texnum = GL_LoadTexture ("conback", conback->width, conback->height, ncdata, qfalse, qfalse);
 	gl->sl = 0;
 	gl->sh = 1;
 	gl->tl = 0;
@@ -1104,15 +1104,15 @@ void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboole
 	// texture even if it was specified as otherwise
 	if (alpha)
 	{
-		noalpha = true;
+		noalpha = qtrue;
 		for (i=0 ; i<s ; i++)
 		{
 			if (data[i] == 255)
-				noalpha = false;
+				noalpha = qfalse;
 		}
 
 		if (alpha && noalpha)
-			alpha = false;
+			alpha = qfalse;
 	}
 	for (scaled_width = 1 ; scaled_width < width ; scaled_width<<=1)
 		;
@@ -1197,17 +1197,17 @@ static	unsigned	trans[640*480];		// FIXME, temporary
 	// texture even if it was specified as otherwise
 	if (alpha)
 	{
-		noalpha = true;
+		noalpha = qtrue;
 		for (i=0 ; i<s ; i++)
 		{
 			p = data[i];
 			if (p == 255)
-				noalpha = false;
+				noalpha = qfalse;
 			trans[i] = d_8to24table[p];
 		}
 
 		if (alpha && noalpha)
-			alpha = false;
+			alpha = qfalse;
 	}
 	else
 	{
@@ -1280,7 +1280,7 @@ GL_LoadPicTexture
 */
 int GL_LoadPicTexture (qpic_t *pic)
 {
-	return GL_LoadTexture ("", pic->width, pic->height, pic->data, false, true);
+	return GL_LoadTexture ("", pic->width, pic->height, pic->data, qfalse, qtrue);
 }
 
 /****************************************/

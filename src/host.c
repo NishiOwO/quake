@@ -35,7 +35,7 @@ Memory is cleared / released when a server or client begins, not when they end.
 
 quakeparms_t host_parms;
 
-qboolean	host_initialized;		// true if into command execution
+qboolean	host_initialized;		// qtrue if into command execution
 
 double		host_frametime;
 double		host_time;
@@ -60,12 +60,12 @@ cvar_t	host_speeds = {"host_speeds","0"};			// set for running times
 cvar_t	sys_ticrate = {"sys_ticrate","0.05"};
 cvar_t	serverprofile = {"serverprofile","0"};
 
-cvar_t	fraglimit = {"fraglimit","0",false,true};
-cvar_t	timelimit = {"timelimit","0",false,true};
-cvar_t	teamplay = {"teamplay","0",false,true};
+cvar_t	fraglimit = {"fraglimit","0",qfalse,qtrue};
+cvar_t	timelimit = {"timelimit","0",qfalse,qtrue};
+cvar_t	teamplay = {"teamplay","0",qfalse,qtrue};
 
 cvar_t	samelevel = {"samelevel","0"};
-cvar_t	noexit = {"noexit","0",false,true};
+cvar_t	noexit = {"noexit","0",qfalse,qtrue};
 
 #ifdef QUAKE2
 cvar_t	developer = {"developer","1"};	// should be 0 for release!
@@ -98,7 +98,7 @@ void Host_EndGame (char *message, ...)
 	Con_DPrintf ("Host_EndGame: %s\n",string);
 	
 	if (sv.active)
-		Host_ShutdownServer (false);
+		Host_ShutdownServer (qfalse);
 
 	if (cls.state == ca_dedicated)
 		Sys_Error ("Host_EndGame: %s\n",string);	// dedicated servers exit
@@ -122,11 +122,11 @@ void Host_Error (char *error, ...)
 {
 	va_list		argptr;
 	char		string[1024];
-	static	qboolean inerror = false;
+	static	qboolean inerror = qfalse;
 	
 	if (inerror)
 		Sys_Error ("Host_Error: recursively entered");
-	inerror = true;
+	inerror = qtrue;
 	
 	SCR_EndLoadingPlaque ();		// reenable screen updates
 
@@ -136,7 +136,7 @@ void Host_Error (char *error, ...)
 	Con_Printf ("Host_Error: %s\n",string);
 	
 	if (sv.active)
-		Host_ShutdownServer (false);
+		Host_ShutdownServer (qfalse);
 
 	if (cls.state == ca_dedicated)
 		Sys_Error ("Host_Error: %s\n",string);	// dedicated servers exit
@@ -144,7 +144,7 @@ void Host_Error (char *error, ...)
 	CL_Disconnect ();
 	cls.demonum = -1;
 
-	inerror = false;
+	inerror = qfalse;
 
 	longjmp (host_abortserver, 1);
 }
@@ -337,7 +337,7 @@ void Host_ClientCommands (char *fmt, ...)
 SV_DropClient
 
 Called when the player is getting totally kicked off the host
-if (crash = true), don't bother sending signofs
+if (crash = qtrue), don't bother sending signofs
 =====================
 */
 void SV_DropClient (qboolean crash)
@@ -373,7 +373,7 @@ void SV_DropClient (qboolean crash)
 	host_client->netconnection = NULL;
 
 // free the client (the body stays around)
-	host_client->active = false;
+	host_client->active = qfalse;
 	host_client->name[0] = 0;
 	host_client->old_frags = -999999;
 	net_activeconnections--;
@@ -413,7 +413,7 @@ void Host_ShutdownServer(qboolean crash)
 	if (!sv.active)
 		return;
 
-	sv.active = false;
+	sv.active = qfalse;
 
 // stop all client sounds immediately
 	if (cls.state == ca_connected)
@@ -495,7 +495,7 @@ void Host_ClearMemory (void)
 ===================
 Host_FilterTime
 
-Returns false if the time is too short to run a frame
+Returns qfalse if the time is too short to run a frame
 ===================
 */
 qboolean Host_FilterTime (float time)
@@ -503,7 +503,7 @@ qboolean Host_FilterTime (float time)
 	realtime += time;
 
 	if (!cls.timedemo && realtime - oldrealtime < 1.0/72.0)
-		return false;		// framerate is too high
+		return qfalse;		// framerate is too high
 
 	host_frametime = realtime - oldrealtime;
 	oldrealtime = realtime;
@@ -518,7 +518,7 @@ qboolean Host_FilterTime (float time)
 			host_frametime = 0.001;
 	}
 	
-	return true;
+	return qtrue;
 }
 
 
@@ -915,7 +915,7 @@ void Host_Init (quakeparms_t *parms)
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
-	host_initialized = true;
+	host_initialized = qtrue;
 	
 	Sys_Printf ("========Quake Initialized=========\n");	
 }
@@ -931,17 +931,17 @@ to run quit through here before the final handoff to the sys code.
 */
 void Host_Shutdown(void)
 {
-	static qboolean isdown = false;
+	static qboolean isdown = qfalse;
 	
 	if (isdown)
 	{
 		printf ("recursive shutdown\n");
 		return;
 	}
-	isdown = true;
+	isdown = qtrue;
 
 // keep Con_Printf from trying to update the screen
-	scr_disabled_for_loading = true;
+	scr_disabled_for_loading = qtrue;
 
 	Host_WriteConfiguration (); 
 

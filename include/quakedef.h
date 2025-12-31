@@ -49,6 +49,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 #if defined(WINQUAKE)
 #include "winquake.h"
@@ -293,7 +296,7 @@ extern	cvar_t		sys_ticrate;
 extern	cvar_t		sys_nostdout;
 extern	cvar_t		developer;
 
-extern	qboolean	host_initialized;		// true if into command execution
+extern	qboolean	host_initialized;		// qtrue if into command execution
 extern	double		host_frametime;
 extern	byte		*host_basepal;
 extern	byte		*host_colormap;

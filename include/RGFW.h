@@ -958,16 +958,16 @@ typedef RGFW_ENUM(i32, RGFW_glRenderer)  {
 typedef struct RGFW_glHints {
 	i32 stencil;  /*!< set stencil buffer bit size (0 by default) */
 	i32 samples; /*!< set number of sample buffers (0 by default) */
-	i32 stereo; /*!< hint the context to use stereoscopic frame buffers for 3D (false by default) */
+	i32 stereo; /*!< hint the context to use stereoscopic frame buffers for 3D (qfalse by default) */
 	i32 auxBuffers; /*!< number of aux buffers (0 by default) */
-	i32 doubleBuffer; /*!< request double buffering (true by default) */
+	i32 doubleBuffer; /*!< request double buffering (qtrue by default) */
 	i32 red, green, blue, alpha; /*!< set color bit sizes (all 8 by default) */
 	i32 depth; /*!< set depth buffer bit size (24 by default) */
 	i32 accumRed, accumGreen, accumBlue, accumAlpha; /*!< set accumulated RGBA bit sizes (all 0 by default) */
-	RGFW_bool sRGB; /*!< request sRGA format (false by default) */
-	RGFW_bool robustness; /*!< request a "robust" (as in memory-safe) context (false by default). For more information check the overview section: https://registry.khronos.org/OpenGL/extensions/EXT/EXT_robustness.txt */
-	RGFW_bool debug; /*!< request OpenGL debugging (false by default). */
-	RGFW_bool noError; /*!< request no OpenGL errors (false by default). This causes OpenGL errors to be undefined behavior. For more information check the overview section: https://registry.khronos.org/OpenGL/extensions/KHR/KHR_no_error.txt */
+	RGFW_bool sRGB; /*!< request sRGA format (qfalse by default) */
+	RGFW_bool robustness; /*!< request a "robust" (as in memory-safe) context (qfalse by default). For more information check the overview section: https://registry.khronos.org/OpenGL/extensions/EXT/EXT_robustness.txt */
+	RGFW_bool debug; /*!< request OpenGL debugging (qfalse by default). */
+	RGFW_bool noError; /*!< request no OpenGL errors (qfalse by default). This causes OpenGL errors to be undefined behavior. For more information check the overview section: https://registry.khronos.org/OpenGL/extensions/KHR/KHR_no_error.txt */
 	RGFW_glReleaseBehavior releaseBehavior; /*!< hint how the OpenGL driver should behave when changing contexts (RGFW_glReleaseNone by default). For more information check the overview section: https://registry.khronos.org/OpenGL/extensions/KHR/KHR_context_flush_control.txt */
 	RGFW_glProfile profile; /*!< set OpenGL API profile (RGFW_glCore by default) */
 	i32 major, minor;  /*!< set the OpenGL API profile version (by default RGFW_glMajor is 1, RGFW_glMinor is 0) */
@@ -1008,7 +1008,7 @@ RGFWDEF size_t RGFW_sizeofWindowSrc(void);
  * This is enabled by default when compiled with `RGFW_WAYLAND`.
  * If not using `RGFW_WAYLAND`, Wayland functions are not exposed.
  * This function can be used to force the use of XWayland.
- * @param wayland A boolean value indicating whether to use Wayland (true) or not (false).
+ * @param wayland A boolean value indicating whether to use Wayland (qtrue) or not (qfalse).
 */
 RGFWDEF void RGFW_useWayland(RGFW_bool wayland);
 
@@ -1205,42 +1205,42 @@ RGFWDEF void RGFW_stopCheckEvents(void);
 * @{ */
 
 /**!
- * @brief returns true if the key is pressed during the current frame
+ * @brief returns qtrue if the key is pressed during the current frame
  * @param key the key code of the key you want to check
  * @return The boolean value if the key is pressed or not
 */
 RGFWDEF RGFW_bool RGFW_isKeyPressed(RGFW_key key);
 
 /**!
- * @brief returns true if the key was released during the current frame
+ * @brief returns qtrue if the key was released during the current frame
  * @param key the key code of the key you want to check
  * @return The boolean value if the key is released or not
 */
 RGFWDEF RGFW_bool RGFW_isKeyReleased(RGFW_key key);
 
 /**!
- * @brief returns true if the key is down
+ * @brief returns qtrue if the key is down
  * @param key the key code of the key you want to check
  * @return The boolean value if the key is down or not
 */
 RGFWDEF RGFW_bool RGFW_isKeyDown(RGFW_key key);
 
 /**!
- * @brief returns true if the mouse button is pressed during the current frame
+ * @brief returns qtrue if the mouse button is pressed during the current frame
  * @param button the mouse button code of the button you want to check
  * @return The boolean value if the button is pressed or not
 */
 RGFWDEF RGFW_bool RGFW_isMousePressed(RGFW_mouseButton button);
 
 /**!
- * @brief returns true if the mouse button is released during the current frame
+ * @brief returns qtrue if the mouse button is released during the current frame
  * @param button the mouse button code of the button you want to check
  * @return The boolean value if the button is released or not
 */
 RGFWDEF RGFW_bool RGFW_isMouseReleased(RGFW_mouseButton button);
 
 /**!
- * @brief returns true if the mouse button is down
+ * @brief returns qtrue if the mouse button is down
  * @param button the mouse button code of the button you want to check
  * @return The boolean value if the button is down or not
 */
@@ -1539,14 +1539,14 @@ RGFWDEF RGFW_bool RGFW_window_isMouseDown(RGFW_window* win, RGFW_mouseButton but
 RGFWDEF RGFW_bool RGFW_window_isMouseReleased(RGFW_window* win, RGFW_mouseButton button);
 
 /**!
- * @brief checks if the mouse left the window (true only for the first frame)
+ * @brief checks if the mouse left the window (qtrue only for the first frame)
  * @param win a pointer to the target window
  * @return RGFW_TRUE if the mouse left, RGFW_FALSE otherwise
 */
 RGFWDEF RGFW_bool RGFW_window_didMouseLeave(RGFW_window* win);
 
 /**!
- * @brief checks if the mouse entered the window (true only for the first frame)
+ * @brief checks if the mouse entered the window (qtrue only for the first frame)
  * @param win a pointer to the target window
  * @return RGFW_TRUE if the mouse entered, RGFW_FALSE otherwise
 */
@@ -1818,7 +1818,7 @@ RGFWDEF RGFW_bool RGFW_window_setMouseDefault(RGFW_window* win);
 RGFWDEF void RGFW_window_holdMouse(RGFW_window* win);
 
 /**!
- * @brief Returns true if the mouse is currently held by RGFW.
+ * @brief Returns qtrue if the mouse is currently held by RGFW.
  * @param win The target window.
  * @return True if the mouse is being held.
 */
@@ -1845,7 +1845,7 @@ RGFWDEF void RGFW_window_show(RGFW_window* win);
 /**!
  * @brief Sets whether the window should close.
  * @param win The target window.
- * @param shouldClose True to signal the window should close, false to keep it open.
+ * @param shouldClose True to signal the window should close, qfalse to keep it open.
  *
  * This can override or trigger the `RGFW_window_shouldClose` state by modifying window flags.
 */
@@ -1871,7 +1871,7 @@ RGFWDEF RGFW_bool RGFW_window_getMouse(RGFW_window* win, i32* x, i32* y);
 /**!
  * @brief Shows or hides the mouse cursor for the window.
  * @param win The target window.
- * @param show True to show the mouse, false to hide it.
+ * @param show True to show the mouse, qfalse to hide it.
 */
 RGFWDEF void RGFW_window_showMouse(RGFW_window* win, RGFW_bool show);
 
@@ -11023,18 +11023,18 @@ static u32 RGFW_OnClose(id self) {
 	RGFW_window* win = NULL;
 	object_getInstanceVariable(self, (const char*)"RGFW_window", (void**)&win);
 	if (win == NULL)
-		return true;
+		return qtrue;
 
 	RGFW_window_setShouldClose(win, RGFW_TRUE);
 	RGFW_eventQueuePushEx(e.type = RGFW_quit; e.common.win = win);
 	RGFW_windowQuitCallback(win);
 
-	return false;
+	return qfalse;
 }
 
 /* NOTE(EimaMei): Fixes the constant clicking when the app is running under a terminal. */
-static bool RGFW__osxAcceptsFirstResponder(void) { return true; }
-static bool RGFW__osxPerformKeyEquivalent(id event) { RGFW_UNUSED(event); return true; }
+static bool RGFW__osxAcceptsFirstResponder(void) { return qtrue; }
+static bool RGFW__osxPerformKeyEquivalent(id event) { RGFW_UNUSED(event); return qtrue; }
 
 static NSDragOperation RGFW__osxDraggingEntered(id self, SEL sel, id sender) {
 	RGFW_UNUSED(sender); RGFW_UNUSED(self); RGFW_UNUSED(sel);
@@ -11068,13 +11068,13 @@ static bool RGFW__osxPrepareForDragOperation(id self) {
 	RGFW_window* win = NULL;
 	object_getInstanceVariable(self, "RGFW_window", (void**)&win);
 	if (win == NULL || (!(win->internal.enabledEvents & RGFW_dataDropFlag)))
-		return true;
+		return qtrue;
 
 	if (!(win->internal.flags & RGFW_windowAllowDND)) {
-		return false;
+		return qfalse;
 	}
 
-	return true;
+	return qtrue;
 }
 
 void RGFW__osxDraggingEnded(id self, SEL sel, id sender);
@@ -11087,7 +11087,7 @@ static bool RGFW__osxPerformDragOperation(id self, SEL sel, id sender) {
 	object_getInstanceVariable(self, "RGFW_window", (void**)&win);
 
 	if (win == NULL || (!(win->internal.enabledEvents & RGFW_dataDropFlag)))
-		return false;
+		return qfalse;
 
 	/* id pasteBoard = objc_msgSend_id(sender, sel_registerName("draggingPasteboard")); */
 
@@ -11133,7 +11133,7 @@ static bool RGFW__osxPerformDragOperation(id self, SEL sel, id sender) {
 	_RGFW->windowState.filesCount =  event.drop.count;
 	RGFW_dataDropCallback(win, event.drop.files, event.drop.count);
 
-	return false;
+	return qfalse;
 }
 
 #ifndef RGFW_NO_IOKIT
@@ -11199,7 +11199,7 @@ void RGFW_moveToMacOSResourceDir(void) {
 
 	if (
 		CFStringCompare(CFSTR("Resources"), last, 0) != kCFCompareEqualTo ||
-		CFURLGetFileSystemRepresentation(resourcesURL, true, (u8*) resourcesPath, 255) == 0
+		CFURLGetFileSystemRepresentation(resourcesURL, qtrue, (u8*) resourcesPath, 255) == 0
 		) {
 		CFRelease(last);
 		CFRelease(resourcesURL);
@@ -11596,7 +11596,7 @@ void RGFW_window_blitSurface(RGFW_window* win, RGFW_surface* surface) {
 	int minX = RGFW_MIN(win->w, surface->w);
 	int minY = RGFW_MIN(win->h, surface->h);
 
-	id rep  = NSBitmapImageRep_initWithBitmapData(&surface->data, minX, minY, 8, (i32)depth, (depth == 4), false, "NSDeviceRGBColorSpace", 1 << 1, (u32)surface->w  * (u32)depth, 8 * (u32)depth);
+	id rep  = NSBitmapImageRep_initWithBitmapData(&surface->data, minX, minY, 8, (i32)depth, (depth == 4), qfalse, "NSDeviceRGBColorSpace", 1 << 1, (u32)surface->w  * (u32)depth, 8 * (u32)depth);
 	RGFW_copyImageData(NSBitmapImageRep_bitmapData(rep), minX, minY , RGFW_formatRGBA8, surface->data, surface->format);
 	((void (*)(id, SEL, id))objc_msgSend)((id)image, sel_getUid("addRepresentation:"), rep);
 
@@ -11808,7 +11808,7 @@ void RGFW_osx_initView(RGFW_window* win) {
 
 	object_setInstanceVariable((id)win->src.view, "RGFW_window", win);
 	objc_msgSend_void_id((id)win->src.window, sel_registerName("setContentView:"), win->src.view);
-	objc_msgSend_void_bool(win->src.view, sel_registerName("setWantsLayer:"), true);
+	objc_msgSend_void_bool(win->src.view, sel_registerName("setWantsLayer:"), qtrue);
 	objc_msgSend_int((id)win->src.view, sel_registerName("setLayerContentsPlacement:"),  4);
 
 	id trackingArea = objc_msgSend_id(objc_getClass("NSTrackingArea"), sel_registerName("alloc"));
@@ -11848,7 +11848,7 @@ RGFW_window* RGFW_createWindowPlatform(const char* name, RGFW_windowFlags flags,
 		SEL func = sel_registerName("initWithContentRect:styleMask:backing:defer:");
 
 		win->src.window = ((id(*)(id, SEL, NSRect, NSWindowStyleMask, NSBackingStoreType, bool))objc_msgSend)
-			(NSAlloc(nsclass), func, windowRect, (NSWindowStyleMask)macArgs, macArgs, false);
+			(NSAlloc(nsclass), func, windowRect, (NSWindowStyleMask)macArgs, macArgs, qfalse);
 	}
 
 	id str = NSString_stringWithUTF8String(name);
@@ -11866,17 +11866,17 @@ RGFW_window* RGFW_createWindowPlatform(const char* name, RGFW_windowFlags flags,
 		NSregisterForDraggedTypes((id)win->src.window, types, 3);
 	}
 
-	objc_msgSend_void_bool((id)win->src.window, sel_registerName("setAcceptsMouseMovedEvents:"), true);
+	objc_msgSend_void_bool((id)win->src.window, sel_registerName("setAcceptsMouseMovedEvents:"), qtrue);
 
 	if (flags & RGFW_windowTransparent) {
-		objc_msgSend_void_bool(win->src.window, sel_registerName("setOpaque:"), false);
+		objc_msgSend_void_bool(win->src.window, sel_registerName("setOpaque:"), qfalse);
 
 		objc_msgSend_void_id((id)win->src.window, sel_registerName("setBackgroundColor:"),
 		NSColor_colorWithSRGB(0, 0, 0, 0));
 	}
 
 	/* Show the window */
-	objc_msgSend_void_bool((id)_RGFW->NSApp, sel_registerName("activateIgnoringOtherApps:"), true);
+	objc_msgSend_void_bool((id)_RGFW->NSApp, sel_registerName("activateIgnoringOtherApps:"), qtrue);
 
 	if (_RGFW->root == NULL) {
 		objc_msgSend_void(win->src.window, sel_registerName("makeMainWindow"));
@@ -11910,7 +11910,7 @@ void RGFW_window_setBorder(RGFW_window* win, RGFW_bool border) {
 	if (!border) {
 		id miniaturizeButton = objc_msgSend_int((id)win->src.window, sel_registerName("standardWindowButton:"),  NSWindowMiniaturizeButton);
 		id titleBarView = objc_msgSend_id(miniaturizeButton, sel_registerName("superview"));
-		objc_msgSend_void_bool(titleBarView, sel_registerName("setHidden:"), true);
+		objc_msgSend_void_bool(titleBarView, sel_registerName("setHidden:"), qtrue);
 
 		offset = (double)(frame.size.height - content.size.height);
 	}
@@ -11955,7 +11955,7 @@ void RGFW_waitForEvent(i32 waitMS) {
 	SEL eventFunc = sel_registerName("nextEventMatchingMask:untilDate:inMode:dequeue:");
 	id e = (id) ((id(*)(id, SEL, NSEventMask, void*, id, bool))objc_msgSend)
 		((id)_RGFW->NSApp, eventFunc,
-			ULONG_MAX, date, NSString_stringWithUTF8String("kCFRunLoopDefaultMode"), true);
+			ULONG_MAX, date, NSString_stringWithUTF8String("kCFRunLoopDefaultMode"), qtrue);
 
 	if (e) {
 		((void (*)(id, SEL, id, bool))objc_msgSend)
@@ -11984,7 +11984,7 @@ void RGFW_pollEvents(void) {
 	while (1) {
 		void* date = NULL;
 		id e = (id) ((id(*)(id, SEL, NSEventMask, void*, id, bool))objc_msgSend)
-			((id)_RGFW->NSApp, eventFunc, ULONG_MAX, date, NSString_stringWithUTF8String("kCFRunLoopDefaultMode"), true);
+			((id)_RGFW->NSApp, eventFunc, ULONG_MAX, date, NSString_stringWithUTF8String("kCFRunLoopDefaultMode"), qtrue);
 
 		if (e == NULL) {
 			objc_msgSend_void_id((id)_RGFW->NSApp, sel_registerName("sendEvent:"), e);
@@ -12023,12 +12023,12 @@ void RGFW_window_resize(RGFW_window* win, i32 w, i32 h) {
 
 	((void(*)(id, SEL, CGRect))objc_msgSend)((id)win->src.view, sel_registerName("setFrame:"),  (NSRect){{0, 0}, {(double)win->w, (double)win->h}});
 	((void(*)(id, SEL, NSRect, bool, bool))objc_msgSend)
-		((id)win->src.window, sel_registerName("setFrame:display:animate:"), (NSRect){{(double)win->x, (double)win->y}, {(double)win->w, (double)win->h + (double)offset}}, true, true);
+		((id)win->src.window, sel_registerName("setFrame:display:animate:"), (NSRect){{(double)win->x, (double)win->y}, {(double)win->w, (double)win->h + (double)offset}}, qtrue, qtrue);
 }
 
 void RGFW_window_focus(RGFW_window* win) {
 	RGFW_ASSERT(win);
-	objc_msgSend_void_bool((id)_RGFW->NSApp, sel_registerName("activateIgnoringOtherApps:"), true);
+	objc_msgSend_void_bool((id)_RGFW->NSApp, sel_registerName("activateIgnoringOtherApps:"), qtrue);
 	((void (*)(id, SEL))objc_msgSend)((id)win->src.window, sel_registerName("makeKeyWindow"));
 }
 
@@ -12163,7 +12163,7 @@ RGFW_bool RGFW_window_setIconEx(RGFW_window* win, u8* data, i32 w, i32 h, RGFW_f
 		return RGFW_TRUE;
 	}
 
-	id representation = NSBitmapImageRep_initWithBitmapData(NULL, w, h, 8, (NSInteger)4, true, false, "NSCalibratedRGBColorSpace", 1 << 1, w * 4, 32);
+	id representation = NSBitmapImageRep_initWithBitmapData(NULL, w, h, 8, (NSInteger)4, qtrue, qfalse, "NSCalibratedRGBColorSpace", 1 << 1, w * 4, 32);
 	RGFW_copyImageData(NSBitmapImageRep_bitmapData(representation), w, h, RGFW_formatRGBA8, data, format);
 
 	id dock_image = ((id(*)(id, SEL, NSSize))objc_msgSend) (NSAlloc((id)objc_getClass("NSImage")), sel_registerName("initWithSize:"), ((NSSize){(CGFloat)w, (CGFloat)h}));
@@ -12191,7 +12191,7 @@ RGFW_mouse* RGFW_loadMouse(u8* data, i32 w, i32 h, RGFW_format format) {
 		return NULL;
 	}
 
-	id representation = (id)NSBitmapImageRep_initWithBitmapData(NULL, w, h, 8, (NSInteger)4, true, false, "NSCalibratedRGBColorSpace", 1 << 1, w * 4, 32);
+	id representation = (id)NSBitmapImageRep_initWithBitmapData(NULL, w, h, 8, (NSInteger)4, qtrue, qfalse, "NSCalibratedRGBColorSpace", 1 << 1, w * 4, 32);
 	RGFW_copyImageData(NSBitmapImageRep_bitmapData(representation), w, h, RGFW_formatRGBA8, data, format);
 
 	id cursor_image = ((id(*)(id, SEL, NSSize))objc_msgSend) (NSAlloc((id)objc_getClass("NSImage")), sel_registerName("initWithSize:"), ((NSSize){(CGFloat)w, (CGFloat)h}));
@@ -12270,7 +12270,7 @@ void RGFW_window_moveMouse(RGFW_window* win, i32 x, i32 y) {
 
 
 void RGFW_window_hide(RGFW_window* win) {
-	objc_msgSend_void_bool(win->src.window, sel_registerName("setIsVisible:"), false);
+	objc_msgSend_void_bool(win->src.window, sel_registerName("setIsVisible:"), qfalse);
 }
 
 void RGFW_window_show(RGFW_window* win) {
@@ -12278,7 +12278,7 @@ void RGFW_window_show(RGFW_window* win) {
 		((id(*)(id, SEL, SEL))objc_msgSend)((id)win->src.window, sel_registerName("makeKeyAndOrderFront:"), NULL);
 
 	((id(*)(id, SEL, SEL))objc_msgSend)((id)win->src.window, sel_registerName("orderFront:"), NULL);
-	objc_msgSend_void_bool(win->src.window, sel_registerName("setIsVisible:"), true);
+	objc_msgSend_void_bool(win->src.window, sel_registerName("setIsVisible:"), qtrue);
 }
 
 RGFW_bool RGFW_window_isHidden(RGFW_window* win) {
@@ -12598,7 +12598,7 @@ RGFW_bool RGFW_window_createContextPtr_OpenGL(RGFW_window* win, RGFW_glContext* 
 	objc_msgSend_void(win->src.ctx.native->ctx, sel_registerName("makeCurrentContext"));
 
 	objc_msgSend_void_id((id)win->src.window, sel_registerName("setContentView:"), win->src.view);
-	objc_msgSend_void_bool(win->src.view, sel_registerName("setWantsLayer:"), true);
+	objc_msgSend_void_bool(win->src.view, sel_registerName("setWantsLayer:"), qtrue);
 	objc_msgSend_int((id)win->src.view, sel_registerName("setLayerContentsPlacement:"),  4);
 
 	RGFW_sendDebugInfo(RGFW_typeInfo, RGFW_infoOpenGL, "OpenGL context initalized.");
@@ -13151,7 +13151,7 @@ RGFW_window* RGFW_createWindowPlatform(const char* name, RGFW_windowFlags flags,
 				Module._RGFW_handleKeyEvent(key, code, 1);
 				_free(key); _free(code);
 			},
-		true);
+		qtrue);
 		window.addEventListener("keyup",
 			(event) => {
 				var key = stringToNewUTF8(event.key); var code = stringToNewUTF8(event.code);
@@ -13159,7 +13159,7 @@ RGFW_window* RGFW_createWindowPlatform(const char* name, RGFW_windowFlags flags,
 				Module._RGFW_handleKeyEvent(key, code, 0);
 				_free(key); _free(code);
 			},
-		true);
+		qtrue);
 	});
 
     EM_ASM({
@@ -13207,9 +13207,9 @@ RGFW_window* RGFW_createWindowPlatform(const char* name, RGFW_windowFlags flags,
 			for (var i = 0; i < count; ++i) {
 				_free(filenamesArray[i]);
 			}
-        }, true);
+        }, qtrue);
 
-        canvas.addEventListener('dragover', function(e) { e.preventDefault(); return false; }, true);
+        canvas.addEventListener('dragover', function(e) { e.preventDefault(); return qfalse; }, qtrue);
     });
 
 	return win;
@@ -13329,7 +13329,7 @@ RGFW_bool RGFW_window_createContextPtr_OpenGL(RGFW_window* win, RGFW_glContext* 
 	emscripten_webgl_make_context_current(win->src.ctx.native->ctx);
 
 	#ifdef LEGACY_GL_EMULATION
-	EM_ASM("Module.useWebGL = true; GLImmediate.init();");
+	EM_ASM("Module.useWebGL = qtrue; GLImmediate.init();");
 	RGFW_sendDebugInfo(RGFW_typeInfo, RGFW_infoOpenGL, "OpenGL context initalized.");
     #endif
 	return RGFW_TRUE;
@@ -13412,11 +13412,11 @@ void RGFW_window_setFullscreen(RGFW_window* win, RGFW_bool fullscreen) {
 	RGFW_ASSERT(win != NULL);
 	if (fullscreen) {
 		win->internal.flags |= RGFW_windowFullscreen;
-		EM_ASM( Module.requestFullscreen(false, true); );
+		EM_ASM( Module.requestFullscreen(qfalse, qtrue); );
 		return;
 	}
 	win->internal.flags &= ~(u32)RGFW_windowFullscreen;
-	EM_ASM( Module.exitFullscreen(false, true); );
+	EM_ASM( Module.exitFullscreen(qfalse, qtrue); );
 }
 
 void RGFW_window_setOpacity(RGFW_window* win, u8 opacity) {

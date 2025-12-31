@@ -279,7 +279,7 @@ void DrawGLWaterPolyLightmap (glpoly_t *p);
 lpMTexFUNC qglMTexCoord2fSGIS = NULL;
 lpSelTexFUNC qglSelectTextureSGIS = NULL;
 
-qboolean mtexenabled = false;
+qboolean mtexenabled = qfalse;
 
 void GL_SelectTexture (GLenum target);
 
@@ -288,7 +288,7 @@ void GL_DisableMultitexture(void)
 	if (mtexenabled) {
 		glDisable(GL_TEXTURE_2D);
 		GL_SelectTexture(TEXTURE0_SGIS);
-		mtexenabled = false;
+		mtexenabled = qfalse;
 	}
 }
 
@@ -297,7 +297,7 @@ void GL_EnableMultitexture(void)
 	if (gl_mtexable) {
 		GL_SelectTexture(TEXTURE1_SGIS);
 		glEnable(GL_TEXTURE_2D);
-		mtexenabled = true;
+		mtexenabled = qtrue;
 	}
 }
 
@@ -439,7 +439,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 			i = s->lightmaptexturenum;
 			if (lightmap_modified[i])
 			{
-				lightmap_modified[i] = false;
+				lightmap_modified[i] = qfalse;
 				theRect = &lightmap_rectchange[i];
 				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t, 
 					BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
@@ -541,7 +541,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 		i = s->lightmaptexturenum;
 		if (lightmap_modified[i])
 		{
-			lightmap_modified[i] = false;
+			lightmap_modified[i] = qfalse;
 			theRect = &lightmap_rectchange[i];
 			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t, 
 				BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
@@ -700,7 +700,7 @@ void R_BlendLightmaps (void)
 		GL_Bind(lightmap_textures+i);
 		if (lightmap_modified[i])
 		{
-			lightmap_modified[i] = false;
+			lightmap_modified[i] = qfalse;
 			theRect = &lightmap_rectchange[i];
 //			glTexImage2D (GL_TEXTURE_2D, 0, lightmap_bytes
 //			, BLOCK_WIDTH, BLOCK_HEIGHT, 0, 
@@ -798,7 +798,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 dynamic:
 		if (r_dynamic.value)
 		{
-			lightmap_modified[fa->lightmaptexturenum] = true;
+			lightmap_modified[fa->lightmaptexturenum] = qtrue;
 			theRect = &lightmap_rectchange[fa->lightmaptexturenum];
 			if (fa->light_t < theRect->t) {
 				if (theRect->h)
@@ -857,7 +857,7 @@ void R_RenderDynamicLightmaps (msurface_t *fa)
 dynamic:
 		if (r_dynamic.value)
 		{
-			lightmap_modified[fa->lightmaptexturenum] = true;
+			lightmap_modified[fa->lightmaptexturenum] = qtrue;
 			theRect = &lightmap_rectchange[fa->lightmaptexturenum];
 			if (fa->light_t < theRect->t) {
 				if (theRect->h)
@@ -891,7 +891,7 @@ void R_MirrorChain (msurface_t *s)
 {
 	if (mirror)
 		return;
-	mirror = true;
+	mirror = qtrue;
 	mirror_plane = s->plane;
 }
 
@@ -1090,7 +1090,7 @@ void R_DrawBrushModel (entity_t *e)
 
 	if (e->angles[0] || e->angles[1] || e->angles[2])
 	{
-		rotated = true;
+		rotated = qtrue;
 		for (i=0 ; i<3 ; i++)
 		{
 			mins[i] = e->origin[i] - clmodel->radius;
@@ -1099,7 +1099,7 @@ void R_DrawBrushModel (entity_t *e)
 	}
 	else
 	{
-		rotated = false;
+		rotated = qfalse;
 		VectorAdd (e->origin, clmodel->mins, mins);
 		VectorAdd (e->origin, clmodel->maxs, maxs);
 	}
@@ -1674,7 +1674,7 @@ void GL_BuildLightmaps (void)
 	{
 		if (!allocated[i][0])
 			break;		// no more used
-		lightmap_modified[i] = false;
+		lightmap_modified[i] = qfalse;
 		lightmap_rectchange[i].l = BLOCK_WIDTH;
 		lightmap_rectchange[i].t = BLOCK_HEIGHT;
 		lightmap_rectchange[i].w = 0;

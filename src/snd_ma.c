@@ -143,7 +143,7 @@ qboolean SNDDMA_Init(void)
 	shm->channels = config.playback.channels;
 	shm->speed = config.sampleRate;
 
-	shm->soundalive = true;
+	shm->soundalive = qtrue;
 	shm->samples = sizeof(dma_buffer) / (shm->samplebits/8);
 	shm->samplepos = 0;
 	shm->submission_chunk = 1;

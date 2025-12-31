@@ -495,9 +495,9 @@ your entitlements.xcent file:
 
     ```
     <key>com.apple.security.cs.allow-dyld-environment-variables</key>
-    <true/>
+    <qtrue/>
     <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-    <true/>
+    <qtrue/>
     ```
 
 See this discussion for more info: https://github.com/mackron/miniaudio/issues/203.
@@ -1485,7 +1485,7 @@ Whether or not a sound should loop can be controlled with `ma_sound_set_looping(
 be looping by default. Use `ma_sound_is_looping()` to determine whether or not a sound is looping.
 
 Use `ma_sound_at_end()` to determine whether or not a sound is currently at the end. For a looping
-sound this should never return true. Alternatively, you can configure a callback that will be fired
+sound this should never return qtrue. Alternatively, you can configure a callback that will be fired
 when the sound reaches the end. Note that the callback is fired from the audio thread which means
 you cannot be uninitializing sound from the callback. To set the callback you can use
 `ma_sound_set_end_callback()`. Alternatively, if you're using `ma_sound_init_ex()`, you can pass it
@@ -2531,7 +2531,7 @@ an example for loading a decoder from a file:
     ma_decoder decoder;
     ma_result result = ma_decoder_init_file("MySong.mp3", NULL, &decoder);
     if (result != MA_SUCCESS) {
-        return false;   // An error occurred.
+        return qfalse;   // An error occurred.
     }
 
     ...
@@ -2566,7 +2566,7 @@ You can also seek to a specific frame like so:
     ```c
     ma_result result = ma_decoder_seek_to_pcm_frame(pDecoder, targetFrame);
     if (result != MA_SUCCESS) {
-        return false;   // An error occurred.
+        return qfalse;   // An error occurred.
     }
     ```
 
@@ -3419,7 +3419,7 @@ The amplitude and seed can be changed dynamically with `ma_noise_set_amplitude()
 
 By default, the noise API will use different values for different channels. So, for example, the
 left side in a stereo stream will be different to the right side. To instead have each channel use
-the same random value, set the `duplicateChannels` member of the noise config to true, like so:
+the same random value, set the `duplicateChannels` member of the noise config to qtrue, like so:
 
     ```c
     config.duplicateChannels = MA_TRUE;
@@ -3501,7 +3501,7 @@ An audio buffer has a playback cursor just like a decoder. As you read frames fr
 cursor moves forward. The last parameter (`loop`) can be used to determine if the buffer should
 loop. The return value is the number of frames actually read. If this is less than the number of
 frames requested it means the end has been reached. This should never happen if the `loop`
-parameter is set to true. If you want to manually loop back to the start, you can do so with with
+parameter is set to qtrue. If you want to manually loop back to the start, you can do so with with
 `ma_audio_buffer_seek_to_pcm_frame(pAudioBuffer, 0)`. Below is an example for reading data from an
 audio buffer.
 
@@ -3643,7 +3643,7 @@ Some backends have some nuance details you may want to be aware of.
 ------------
 - Low-latency shared mode will be disabled when using an application-defined sample rate which is
   different to the device's native sample rate. To work around this, set `wasapi.noAutoConvertSRC`
-  to true in the device config. This is due to IAudioClient3_InitializeSharedAudioStream() failing
+  to qtrue in the device config. This is due to IAudioClient3_InitializeSharedAudioStream() failing
   when the `AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM` flag is specified. Setting wasapi.noAutoConvertSRC
   will result in miniaudio's internal resampler being used instead which will in turn enable the
   use of low-latency shared mode.
@@ -3709,11 +3709,11 @@ See below for some tips on improving performance.
 16.1. Low Level API
 -------------------
 - In the data callback, if your data is already clipped prior to copying it into the output buffer,
-  set the `noClip` config option in the device config to true. This will disable miniaudio's built
+  set the `noClip` config option in the device config to qtrue. This will disable miniaudio's built
   in clipping function.
 - By default, miniaudio will pre-silence the data callback's output buffer. If you know that you
   will always write valid data to the output buffer you can disable pre-silencing by setting the
-  `noPreSilence` config option in the device config to true.
+  `noPreSilence` config option in the device config to qtrue.
 
 16.2. High Level API
 --------------------
@@ -4976,7 +4976,7 @@ typedef struct
     ma_uint32 channels;
     ma_uint32 sampleRate;
     ma_uint32 delayInFrames;
-    ma_bool32 delayStart;       /* Set to true to delay the start of the output; false otherwise. */
+    ma_bool32 delayStart;       /* Set to qtrue to delay the start of the output; qfalse otherwise. */
     float wet;                  /* 0..1. Default = 1. */
     float dry;                  /* 0..1. Default = 1. */
     float decay;                /* 0..1. Default = 0 (no feedback). Feedback decay. Use this for echo. */
@@ -5043,7 +5043,7 @@ MA_API ma_result ma_gainer_get_master_volume(const ma_gainer* pGainer, float* pV
 typedef enum
 {
     ma_pan_mode_balance = 0,    /* Does not blend one side with the other. Technically just a balance. Compatible with other popular audio engines and therefore the default. */
-    ma_pan_mode_pan             /* A true pan. The sound from one side will "move" to the other side and blend with it. */
+    ma_pan_mode_pan             /* A qtrue pan. The sound from one side will "move" to the other side and blend with it. */
 } ma_pan_mode;
 
 typedef struct
@@ -5519,7 +5519,7 @@ typedef struct
     const ma_channel* pChannelMapIn;
     const ma_channel* pChannelMapOut;
     ma_channel_mix_mode mixingMode;
-    ma_bool32 calculateLFEFromSpatialChannels;  /* When an output LFE channel is present, but no input LFE, set to true to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present. */
+    ma_bool32 calculateLFEFromSpatialChannels;  /* When an output LFE channel is present, but no input LFE, set to qtrue to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present. */
     float** ppWeights;  /* [in][out]. Only used when mixingMode is set to ma_channel_mix_mode_custom_weights. */
 } ma_channel_converter_config;
 
@@ -5572,7 +5572,7 @@ typedef struct
     ma_channel* pChannelMapOut;
     ma_dither_mode ditherMode;
     ma_channel_mix_mode channelMixMode;
-    ma_bool32 calculateLFEFromSpatialChannels;  /* When an output LFE channel is present, but no input LFE, set to true to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present. */
+    ma_bool32 calculateLFEFromSpatialChannels;  /* When an output LFE channel is present, but no input LFE, set to qtrue to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present. */
     float** ppChannelWeights;  /* [in][out]. Only used when mixingMode is set to ma_channel_mix_mode_custom_weights. */
     ma_bool32 allowDynamicSampleRate;
     ma_resampler_config resampling;
@@ -5905,7 +5905,7 @@ typedef struct
 {
     ma_audio_buffer_ref ref;
     ma_allocation_callbacks allocationCallbacks;
-    ma_bool32 ownsData;             /* Used to control whether or not miniaudio owns the data buffer. If set to true, pData will be freed in ma_audio_buffer_uninit(). */
+    ma_bool32 ownsData;             /* Used to control whether or not miniaudio owns the data buffer. If set to qtrue, pData will be freed in ma_audio_buffer_uninit(). */
     ma_uint8 _pExtraData[1];        /* For allocating a buffer with the memory located directly after the other memory of the structure. */
 } ma_audio_buffer;
 
@@ -6722,7 +6722,7 @@ ma_device_job_thread_post(). The thread will do the processing of the job.
 */
 typedef struct
 {
-    ma_bool32 noThread; /* Set this to true if you want to process jobs yourself. */
+    ma_bool32 noThread; /* Set this to qtrue if you want to process jobs yourself. */
     ma_uint32 jobQueueCapacity;
     ma_uint32 jobQueueFlags;
 } ma_device_job_thread_config;
@@ -7078,10 +7078,10 @@ struct ma_device_config
     ma_uint32 periodSizeInMilliseconds;
     ma_uint32 periods;
     ma_performance_profile performanceProfile;
-    ma_bool8 noPreSilencedOutputBuffer; /* When set to true, the contents of the output buffer passed into the data callback will be left undefined rather than initialized to silence. */
-    ma_bool8 noClip;                    /* When set to true, the contents of the output buffer passed into the data callback will not be clipped after returning. Only applies when the playback sample format is f32. */
+    ma_bool8 noPreSilencedOutputBuffer; /* When set to qtrue, the contents of the output buffer passed into the data callback will be left undefined rather than initialized to silence. */
+    ma_bool8 noClip;                    /* When set to qtrue, the contents of the output buffer passed into the data callback will not be clipped after returning. Only applies when the playback sample format is f32. */
     ma_bool8 noDisableDenormals;        /* Do not disable denormals when firing the data callback. */
-    ma_bool8 noFixedSizedCallback;      /* Disables strict fixed-sized data callbacks. Setting this to true will result in the period size being treated only as a hint to the backend. This is an optimization for those who don't need fixed sized callbacks. */
+    ma_bool8 noFixedSizedCallback;      /* Disables strict fixed-sized data callbacks. Setting this to qtrue will result in the period size being treated only as a hint to the backend. This is an optimization for those who don't need fixed sized callbacks. */
     ma_device_data_proc dataCallback;
     ma_device_notification_proc notificationCallback;
     ma_stop_proc stopCallback;
@@ -7094,7 +7094,7 @@ struct ma_device_config
         ma_uint32 channels;
         ma_channel* pChannelMap;
         ma_channel_mix_mode channelMixMode;
-        ma_bool32 calculateLFEFromSpatialChannels;  /* When an output LFE channel is present, but no input LFE, set to true to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present. */
+        ma_bool32 calculateLFEFromSpatialChannels;  /* When an output LFE channel is present, but no input LFE, set to qtrue to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present. */
         ma_share_mode shareMode;
     } playback;
     struct
@@ -7104,19 +7104,19 @@ struct ma_device_config
         ma_uint32 channels;
         ma_channel* pChannelMap;
         ma_channel_mix_mode channelMixMode;
-        ma_bool32 calculateLFEFromSpatialChannels;  /* When an output LFE channel is present, but no input LFE, set to true to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present. */
+        ma_bool32 calculateLFEFromSpatialChannels;  /* When an output LFE channel is present, but no input LFE, set to qtrue to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present. */
         ma_share_mode shareMode;
     } capture;
 
     struct
     {
         ma_wasapi_usage usage;              /* When configured, uses Avrt APIs to set the thread characteristics. */
-        ma_bool8 noAutoConvertSRC;          /* When set to true, disables the use of AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM. */
-        ma_bool8 noDefaultQualitySRC;       /* When set to true, disables the use of AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY. */
+        ma_bool8 noAutoConvertSRC;          /* When set to qtrue, disables the use of AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM. */
+        ma_bool8 noDefaultQualitySRC;       /* When set to qtrue, disables the use of AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY. */
         ma_bool8 noAutoStreamRouting;       /* Disables automatic stream routing. */
         ma_bool8 noHardwareOffloading;      /* Disables WASAPI's hardware offloading feature. */
         ma_uint32 loopbackProcessID;        /* The process ID to include or exclude for loopback mode. Set to 0 to capture audio from all processes. Ignored when an explicit device ID is specified. */
-        ma_bool8 loopbackProcessExclude;    /* When set to true, excludes the process specified by loopbackProcessID. By default, the process will be included. */
+        ma_bool8 loopbackProcessExclude;    /* When set to qtrue, excludes the process specified by loopbackProcessID. By default, the process will be included. */
     } wasapi;
     struct
     {
@@ -7230,7 +7230,7 @@ internally by miniaudio.
 
 On input, if the sample format is set to `ma_format_unknown`, the backend is free to use whatever sample format it desires, so long as it's
 supported by miniaudio. When the channel count is set to 0, the backend should use the device's native channel count. The same applies for
-sample rate. For the channel map, the default should be used when `ma_channel_map_is_blank()` returns true (all channels set to
+sample rate. For the channel map, the default should be used when `ma_channel_map_is_blank()` returns qtrue (all channels set to
 `MA_CHANNEL_NONE`). On input, the `periodSizeInFrames` or `periodSizeInMilliseconds` option should always be set. The backend should
 inspect both of these variables. If `periodSizeInFrames` is set, it should take priority, otherwise it needs to be derived from the period
 size in milliseconds (`periodSizeInMilliseconds`) and the sample rate, keeping in mind that the sample rate may be 0, in which case the
@@ -7303,8 +7303,8 @@ struct ma_context_config
     {
         ma_ios_session_category sessionCategory;
         ma_uint32 sessionCategoryOptions;
-        ma_bool32 noAudioSessionActivate;   /* iOS only. When set to true, does not perform an explicit [[AVAudioSession sharedInstace] setActive:true] on initialization. */
-        ma_bool32 noAudioSessionDeactivate; /* iOS only. When set to true, does not perform an explicit [[AVAudioSession sharedInstace] setActive:false] on uninitialization. */
+        ma_bool32 noAudioSessionActivate;   /* iOS only. When set to qtrue, does not perform an explicit [[AVAudioSession sharedInstace] setActive:qtrue] on initialization. */
+        ma_bool32 noAudioSessionDeactivate; /* iOS only. When set to qtrue, does not perform an explicit [[AVAudioSession sharedInstace] setActive:qfalse] on uninitialization. */
     } coreaudio;
     struct
     {
@@ -7764,7 +7764,7 @@ struct ma_device
     ma_event stopEvent;
     ma_thread thread;
     ma_result workResult;                       /* This is set by the worker thread after it's finished doing a job. */
-    ma_bool8 isOwnerOfContext;                  /* When set to true, uninitializing the device will also uninitialize the context. Set to true when NULL is passed into ma_device_init(). */
+    ma_bool8 isOwnerOfContext;                  /* When set to qtrue, uninitializing the device will also uninitialize the context. Set to qtrue when NULL is passed into ma_device_init(). */
     ma_bool8 noPreSilencedOutputBuffer;
     ma_bool8 noClip;
     ma_bool8 noDisableDenormals;
@@ -7861,8 +7861,8 @@ struct ma_device
             ma_atomic_bool32 isStartedPlayback;                     /* Can be read and written simultaneously across different threads. Must be used atomically, and must be 32-bit. */
             ma_uint32 loopbackProcessID;
             ma_bool8 loopbackProcessExclude;
-            ma_bool8 noAutoConvertSRC;                              /* When set to true, disables the use of AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM. */
-            ma_bool8 noDefaultQualitySRC;                           /* When set to true, disables the use of AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY. */
+            ma_bool8 noAutoConvertSRC;                              /* When set to qtrue, disables the use of AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM. */
+            ma_bool8 noDefaultQualitySRC;                           /* When set to qtrue, disables the use of AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY. */
             ma_bool8 noHardwareOffloading;
             ma_bool8 allowCaptureAutoStreamRouting;
             ma_bool8 allowPlaybackAutoStreamRouting;
@@ -7952,8 +7952,8 @@ struct ma_device
             ma_performance_profile originalPerformanceProfile;
             ma_bool32 isDefaultPlaybackDevice;
             ma_bool32 isDefaultCaptureDevice;
-            ma_bool32 isSwitchingPlaybackDevice;   /* <-- Set to true when the default device has changed and miniaudio is in the process of switching. */
-            ma_bool32 isSwitchingCaptureDevice;    /* <-- Set to true when the default device has changed and miniaudio is in the process of switching. */
+            ma_bool32 isSwitchingPlaybackDevice;   /* <-- Set to qtrue when the default device has changed and miniaudio is in the process of switching. */
+            ma_bool32 isSwitchingCaptureDevice;    /* <-- Set to qtrue when the default device has changed and miniaudio is in the process of switching. */
             void* pNotificationHandler;             /* Only used on mobile platforms. Obj-C object for handling route changes. */
         } coreaudio;
 #endif
@@ -8164,7 +8164,7 @@ can then be set directly on the structure. Below are the members of the `ma_cont
     alsa.useVerboseDeviceEnumeration
         ALSA will typically enumerate many different devices which can be intrusive and not user-friendly. To combat this, miniaudio will enumerate only unique
         card/device pairs by default. The problem with this is that you lose a bit of flexibility and control. Setting alsa.useVerboseDeviceEnumeration makes
-        it so the ALSA backend includes all devices. Defaults to false.
+        it so the ALSA backend includes all devices. Defaults to qfalse.
 
     pulse.pApplicationName
         PulseAudio only. The application name to use when initializing the PulseAudio context with `pa_context_new()`.
@@ -8173,7 +8173,7 @@ can then be set directly on the structure. Below are the members of the `ma_cont
         PulseAudio only. The name of the server to connect to with `pa_context_connect()`.
 
     pulse.tryAutoSpawn
-        PulseAudio only. Whether or not to try automatically starting the PulseAudio daemon. Defaults to false. If you set this to true, keep in mind that
+        PulseAudio only. Whether or not to try automatically starting the PulseAudio daemon. Defaults to qfalse. If you set this to qtrue, keep in mind that
         miniaudio uses a trial and error method to find the most appropriate backend, and this will result in the PulseAudio daemon starting which may be
         intrusive for the end user.
 
@@ -8209,16 +8209,16 @@ can then be set directly on the structure. Below are the members of the `ma_cont
         |---------------------------------------------------------------------------|------------------------------------------------------------------|
 
     coreaudio.noAudioSessionActivate
-        iOS only. When set to true, does not perform an explicit [[AVAudioSession sharedInstace] setActive:true] on initialization.
+        iOS only. When set to qtrue, does not perform an explicit [[AVAudioSession sharedInstace] setActive:qtrue] on initialization.
 
     coreaudio.noAudioSessionDeactivate
-        iOS only. When set to true, does not perform an explicit [[AVAudioSession sharedInstace] setActive:false] on uninitialization.
+        iOS only. When set to qtrue, does not perform an explicit [[AVAudioSession sharedInstace] setActive:qfalse] on uninitialization.
 
     jack.pClientName
         The name of the client to pass to `jack_client_open()`.
 
     jack.tryStartServer
-        Whether or not to try auto-starting the JACK server. Defaults to false.
+        Whether or not to try auto-starting the JACK server. Defaults to qfalse.
 
 
 It is recommended that only a single context is active at any given time because it's a bulky data structure which performs run-time linking for the
@@ -8346,7 +8346,7 @@ Note that this only retrieves the ID and name/description of the device. The rea
 opening the backend device in order to probe it for more detailed information which can be inefficient. Consider using `ma_context_get_device_info()` for this,
 but don't call it from within the enumeration callback.
 
-Returning false from the callback will stop enumeration. Returning true will continue enumeration.
+Returning qfalse from the callback will stop enumeration. Returning qtrue will continue enumeration.
 
 
 Parameters
@@ -8670,21 +8670,21 @@ then be set directly on the structure. Below are the members of the `ma_device_c
         `ma_performance_profile_conservative`. This mainly affects the size of default buffers and can usually be left at its default value.
 
     noPreSilencedOutputBuffer
-        When set to true, the contents of the output buffer passed into the data callback will be left undefined. When set to false (default), the contents of
+        When set to qtrue, the contents of the output buffer passed into the data callback will be left undefined. When set to qfalse (default), the contents of
         the output buffer will be cleared the zero. You can use this to avoid the overhead of zeroing out the buffer if you can guarantee that your data
         callback will write to every sample in the output buffer, or if you are doing your own clearing.
 
     noClip
-        When set to true, the contents of the output buffer are left alone after returning and it will be left up to the backend itself to decide whether or
-        not to clip. When set to false (default), the contents of the output buffer passed into the data callback will be clipped after returning. This only
+        When set to qtrue, the contents of the output buffer are left alone after returning and it will be left up to the backend itself to decide whether or
+        not to clip. When set to qfalse (default), the contents of the output buffer passed into the data callback will be clipped after returning. This only
         applies when the playback sample format is f32.
 
     noDisableDenormals
-        By default, miniaudio will disable denormals when the data callback is called. Setting this to true will prevent the disabling of denormals.
+        By default, miniaudio will disable denormals when the data callback is called. Setting this to qtrue will prevent the disabling of denormals.
 
     noFixedSizedCallback
-        Allows miniaudio to fire the data callback with any frame count. When this is set to false (the default), the data callback will be fired with a
-        consistent frame count as specified by `periodSizeInFrames` or `periodSizeInMilliseconds`. When set to true, miniaudio will fire the callback with
+        Allows miniaudio to fire the data callback with any frame count. When this is set to qfalse (the default), the data callback will be fired with a
+        consistent frame count as specified by `periodSizeInFrames` or `periodSizeInMilliseconds`. When set to qtrue, miniaudio will fire the callback with
         whatever the backend requests, which could be anything.
 
     dataCallback
@@ -8754,29 +8754,29 @@ then be set directly on the structure. Below are the members of the `ma_device_c
         ma_share_mode_shared and reinitializing.
 
     wasapi.noAutoConvertSRC
-        WASAPI only. When set to true, disables WASAPI's automatic resampling and forces the use of miniaudio's resampler. Defaults to false.
+        WASAPI only. When set to qtrue, disables WASAPI's automatic resampling and forces the use of miniaudio's resampler. Defaults to qfalse.
 
     wasapi.noDefaultQualitySRC
-        WASAPI only. Only used when `wasapi.noAutoConvertSRC` is set to false. When set to true, disables the use of `AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY`.
-        You should usually leave this set to false, which is the default.
+        WASAPI only. Only used when `wasapi.noAutoConvertSRC` is set to qfalse. When set to qtrue, disables the use of `AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY`.
+        You should usually leave this set to qfalse, which is the default.
 
     wasapi.noAutoStreamRouting
-        WASAPI only. When set to true, disables automatic stream routing on the WASAPI backend. Defaults to false.
+        WASAPI only. When set to qtrue, disables automatic stream routing on the WASAPI backend. Defaults to qfalse.
 
     wasapi.noHardwareOffloading
-        WASAPI only. When set to true, disables the use of WASAPI's hardware offloading feature. Defaults to false.
+        WASAPI only. When set to qtrue, disables the use of WASAPI's hardware offloading feature. Defaults to qfalse.
 
     alsa.noMMap
-        ALSA only. When set to true, disables MMap mode. Defaults to false.
+        ALSA only. When set to qtrue, disables MMap mode. Defaults to qfalse.
 
     alsa.noAutoFormat
-        ALSA only. When set to true, disables ALSA's automatic format conversion by including the SND_PCM_NO_AUTO_FORMAT flag. Defaults to false.
+        ALSA only. When set to qtrue, disables ALSA's automatic format conversion by including the SND_PCM_NO_AUTO_FORMAT flag. Defaults to qfalse.
 
     alsa.noAutoChannels
-        ALSA only. When set to true, disables ALSA's automatic channel conversion by including the SND_PCM_NO_AUTO_CHANNELS flag. Defaults to false.
+        ALSA only. When set to qtrue, disables ALSA's automatic channel conversion by including the SND_PCM_NO_AUTO_CHANNELS flag. Defaults to qfalse.
 
     alsa.noAutoResample
-        ALSA only. When set to true, disables ALSA's automatic resampling by including the SND_PCM_NO_AUTO_RESAMPLE flag. Defaults to false.
+        ALSA only. When set to qtrue, disables ALSA's automatic resampling by including the SND_PCM_NO_AUTO_RESAMPLE flag. Defaults to qfalse.
 
     pulse.pStreamNamePlayback
         PulseAudio only. Sets the stream name for playback.
@@ -8790,9 +8790,9 @@ then be set directly on the structure. Below are the members of the `ma_device_c
     coreaudio.allowNominalSampleRateChange
         Core Audio only. Desktop only. When enabled, allows the sample rate of the device to be changed at the operating system level. This
         is disabled by default in order to prevent intrusive changes to the user's system. This is useful if you want to use a sample rate
-        that is known to be natively supported by the hardware thereby avoiding the cost of resampling. When set to true, miniaudio will
+        that is known to be natively supported by the hardware thereby avoiding the cost of resampling. When set to qtrue, miniaudio will
         find the closest match between the sample rate requested in the device config and the sample rates natively supported by the
-        hardware. When set to false, the sample rate currently set by the operating system will always be used.
+        hardware. When set to qfalse, the sample rate currently set by the operating system will always be used.
 
     opensl.streamType
         OpenSL only. Explicitly sets the stream type. If left unset (`ma_opensl_stream_type_default`), the
@@ -8815,7 +8815,7 @@ then be set directly on the structure. Below are the members of the `ma_device_c
 
     aaudio.noAutoStartAfterReroute
         AAudio only. Controls whether or not the device should be automatically restarted after a
-        stream reroute. When set to false (default) the device will be restarted automatically;
+        stream reroute. When set to qfalse (default) the device will be restarted automatically;
         otherwise the device will be stopped.
 
 
@@ -9211,7 +9211,7 @@ pDevice (in)
 
 Return Value
 ------------
-True if the device is started, false otherwise.
+True if the device is started, qfalse otherwise.
 
 
 Thread Safety
@@ -10405,7 +10405,7 @@ struct ma_resource_manager_data_buffer_node
     MA_ATOMIC(4, ma_result) result;                 /* Result from asynchronous loading. When loading set to MA_BUSY. When fully loaded set to MA_SUCCESS. When deleting set to MA_UNAVAILABLE. */
     MA_ATOMIC(4, ma_uint32) executionCounter;       /* For allocating execution orders for jobs. */
     MA_ATOMIC(4, ma_uint32) executionPointer;       /* For managing the order of execution for asynchronous jobs relating to this object. Incremented as jobs complete processing. */
-    ma_bool32 isDataOwnedByResourceManager;         /* Set to true when the underlying data buffer was allocated the resource manager. Set to false if it is owned by the application (via ma_resource_manager_register_*()). */
+    ma_bool32 isDataOwnedByResourceManager;         /* Set to qtrue when the underlying data buffer was allocated the resource manager. Set to qfalse if it is owned by the application (via ma_resource_manager_register_*()). */
     ma_resource_manager_data_supply data;
     ma_resource_manager_data_buffer_node* pParent;
     ma_resource_manager_data_buffer_node* pChildLo;
@@ -10457,7 +10457,7 @@ struct ma_resource_manager_data_stream
     /* Written and read by both the public API and the job thread. These must be atomic. */
     MA_ATOMIC(4, ma_result) result;             /* Result from asynchronous loading. When loading set to MA_BUSY. When initialized set to MA_SUCCESS. When deleting set to MA_UNAVAILABLE. If an error occurs when loading, set to an error code. */
     MA_ATOMIC(4, ma_bool32) isDecoderAtEnd;     /* Whether or not the decoder has reached the end. */
-    MA_ATOMIC(4, ma_bool32) isPageValid[2];     /* Booleans to indicate whether or not a page is valid. Set to false by the public API, set to true by the job thread. Set to false as the pages are consumed, true when they are filled. */
+    MA_ATOMIC(4, ma_bool32) isPageValid[2];     /* Booleans to indicate whether or not a page is valid. Set to qfalse by the public API, set to qtrue by the job thread. Set to qfalse as the pages are consumed, qtrue when they are filled. */
     MA_ATOMIC(4, ma_bool32) seekCounter;        /* When 0, no seeking is being performed. When > 0, a seek is being performed and reading should be delayed with MA_BUSY. */
 };
 
@@ -10756,7 +10756,7 @@ struct ma_node_base
     ma_node_input_bus _inputBuses[MA_MAX_NODE_LOCAL_BUS_COUNT];
     ma_node_output_bus _outputBuses[MA_MAX_NODE_LOCAL_BUS_COUNT];
     void* _pHeap;   /* A heap allocation for internal use only. pInputBuses and/or pOutputBuses will point to this if the bus count exceeds MA_MAX_NODE_LOCAL_BUS_COUNT. */
-    ma_bool32 _ownsHeap;    /* If set to true, the node owns the heap allocation and _pHeap will be freed in ma_node_uninit(). */
+    ma_bool32 _ownsHeap;    /* If set to qtrue, the node owns the heap allocation and _pHeap will be freed in ma_node_uninit(). */
 };
 
 MA_API ma_result ma_node_get_heap_size(ma_node_graph* pNodeGraph, const ma_node_config* pConfig, size_t* pHeapSizeInBytes);
@@ -11145,8 +11145,8 @@ typedef struct
     MA_ATOMIC(4, float) pitch;
     float oldPitch;                                     /* For determining whether or not the resampler needs to be updated to reflect the new pitch. The resampler will be updated on the mixing thread. */
     float oldDopplerPitch;                              /* For determining whether or not the resampler needs to be updated to take a new doppler pitch into account. */
-    MA_ATOMIC(4, ma_bool32) isPitchDisabled;            /* When set to true, pitching will be disabled which will allow the resampler to be bypassed to save some computation. */
-    MA_ATOMIC(4, ma_bool32) isSpatializationDisabled;   /* Set to false by default. When set to false, will not have spatialisation applied. */
+    MA_ATOMIC(4, ma_bool32) isPitchDisabled;            /* When set to qtrue, pitching will be disabled which will allow the resampler to be bypassed to save some computation. */
+    MA_ATOMIC(4, ma_bool32) isSpatializationDisabled;   /* Set to qfalse by default. When set to qfalse, will not have spatialisation applied. */
     MA_ATOMIC(4, ma_uint32) pinnedListenerIndex;        /* The index of the listener this node should always use for spatialization. If set to MA_LISTENER_INDEX_CLOSEST the engine will use the closest listener. */
 
     /* When setting a fade, it's not done immediately in ma_sound_set_fade(). It's deferred to the audio thread which means we need to store the settings here. */
@@ -11263,8 +11263,8 @@ typedef struct
     ma_uint32 defaultVolumeSmoothTimeInPCMFrames;   /* Defaults to 0. Controls the default amount of smoothing to apply to volume changes to sounds. High values means more smoothing at the expense of high latency (will take longer to reach the new volume). */
     ma_uint32 preMixStackSizeInBytes;               /* A stack is used for internal processing in the node graph. This allows you to configure the size of this stack. Smaller values will reduce the maximum depth of your node graph. You should rarely need to modify this. */
     ma_allocation_callbacks allocationCallbacks;
-    ma_bool32 noAutoStart;                          /* When set to true, requires an explicit call to ma_engine_start(). This is false by default, meaning the engine will be started automatically in ma_engine_init(). */
-    ma_bool32 noDevice;                             /* When set to true, don't create a default device. ma_engine_read_pcm_frames() can be called manually to read data. */
+    ma_bool32 noAutoStart;                          /* When set to qtrue, requires an explicit call to ma_engine_start(). This is qfalse by default, meaning the engine will be started automatically in ma_engine_init(). */
+    ma_bool32 noDevice;                             /* When set to qtrue, don't create a default device. ma_engine_read_pcm_frames() can be called manually to read data. */
     ma_mono_expansion_mode monoExpansionMode;       /* Controls how the mono channel should be expanded to other channels when spatialization is disabled on a sound. */
     ma_vfs* pResourceManagerVFS;                    /* A pointer to a pre-allocated VFS object to use with the resource manager. This is ignored if pResourceManager is not NULL. */
     ma_engine_process_proc onProcess;               /* Fired at the end of each call to ma_engine_read_pcm_frames(). For engine's that manage their own internal device (the default configuration), this will be fired from the audio thread, and you do not need to call ma_engine_read_pcm_frames() manually in order to trigger this. */
@@ -17389,7 +17389,7 @@ MA_API ma_result ma_slot_allocator_free(ma_slot_allocator* pAllocator, ma_uint64
         return MA_INVALID_ARGS;
     }
 
-    MA_ASSERT(iBit < 32);   /* This must be true due to the logic we used to actually calculate it. */
+    MA_ASSERT(iBit < 32);   /* This must be qtrue due to the logic we used to actually calculate it. */
 
     while (ma_atomic_load_32(&pAllocator->count) > 0) {
         /* CAS */
@@ -27127,14 +27127,14 @@ static ma_bool32 ma_is_device_name_in_hw_format__alsa(const char* hwid)
         dev += 1;   /* Skip past the ",". */
     }
 
-    /* Check if the part between the ":" and the "," contains only numbers. If not, return false. */
+    /* Check if the part between the ":" and the "," contains only numbers. If not, return qfalse. */
     for (i = 0; i < commaPos; ++i) {
         if (hwid[i] < '0' || hwid[i] > '9') {
             return MA_FALSE;
         }
     }
 
-    /* Check if everything after the "," is numeric. If not, return false. */
+    /* Check if everything after the "," is numeric. If not, return qfalse. */
     i = 0;
     while (dev[i] != '\0') {
         if (dev[i] < '0' || dev[i] > '9') {
@@ -27499,7 +27499,7 @@ static ma_result ma_context_enumerate_devices__alsa(ma_context* pContext, ma_enu
         free(IOID);
         ppNextDeviceHint += 1;
 
-        /* We need to stop enumeration if the callback returned false. */
+        /* We need to stop enumeration if the callback returned qfalse. */
         if (stopEnumeration) {
             break;
         }
@@ -34451,7 +34451,7 @@ static ma_result ma_device_init_internal__coreaudio(ma_context* pContext, ma_dev
         Something that does seem to work, however, has been setting the nominal sample rate on the device object. The problem with
         this, however, is that it actually changes the sample rate at the operating system level and not just the application. This
         could be intrusive to the user, however, so I don't think it's wise to make this the default. Instead I'm making this a
-        configuration option. When the `coreaudio.allowNominalSampleRateChange` config option is set to true, changing the sample
+        configuration option. When the `coreaudio.allowNominalSampleRateChange` config option is set to qtrue, changing the sample
         rate will be allowed. Otherwise it'll be fixed to the current sample rate. To check the system-defined sample rate, run
         the Audio MIDI Setup program that comes installed on macOS and observe how the sample rate changes as the sample rate is
         changed by miniaudio.
@@ -34997,7 +34997,7 @@ static ma_result ma_context_uninit__coreaudio(ma_context* pContext)
 
 #if defined(MA_APPLE_MOBILE)
     if (!pContext->coreaudio.noAudioSessionDeactivate) {
-        if (![[AVAudioSession sharedInstance] setActive:false error:nil]) {
+        if (![[AVAudioSession sharedInstance] setActive:qfalse error:nil]) {
             ma_log_postf(ma_context_get_log(pContext), MA_LOG_LEVEL_ERROR, "Failed to deactivate audio session.");
             return MA_FAILED_TO_INIT_BACKEND;
         }
@@ -35087,7 +35087,7 @@ static ma_result ma_context_init__coreaudio(ma_context* pContext, const ma_conte
         }
 
         if (!pConfig->coreaudio.noAudioSessionActivate) {
-            if (![pAudioSession setActive:true error:nil]) {
+            if (![pAudioSession setActive:qtrue error:nil]) {
                 ma_log_postf(ma_context_get_log(pContext), MA_LOG_LEVEL_ERROR, "Failed to activate audio session.");
                 return MA_FAILED_TO_INIT_BACKEND;
             }
@@ -40380,7 +40380,7 @@ static void ma_audio_worklet_processor_created__webaudio(EMSCRIPTEN_WEBAUDIO_T a
             var audioWorklet = emscriptenGetAudioObject($0);
             var audioContext = emscriptenGetAudioObject($1);
 
-            navigator.mediaDevices.getUserMedia({audio:true, video:false})
+            navigator.mediaDevices.getUserMedia({audio:qtrue, video:qfalse})
                 .then(function(stream) {
                     audioContext.streamNode = audioContext.createMediaStreamSource(stream);
                     audioContext.streamNode.connect(audioWorklet);
@@ -40683,7 +40683,7 @@ static ma_result ma_device_init__webaudio(ma_device* pDevice, const ma_device_co
 
             /* Now we need to connect our node to the graph. */
             if (deviceType == window.miniaudio.device_type.capture || deviceType == window.miniaudio.device_type.duplex) {
-                navigator.mediaDevices.getUserMedia({audio:true, video:false})
+                navigator.mediaDevices.getUserMedia({audio:qtrue, video:qfalse})
                     .then(function(stream) {
                         device.streamNode = device.webaudio.createMediaStreamSource(stream);
                         device.streamNode.connect(device.scriptNode);
@@ -40783,7 +40783,7 @@ static ma_result ma_context_uninit__webaudio(ma_context* pContext)
     EM_ASM({
         if (typeof(window.miniaudio) !== 'undefined') {
             miniaudio.unlock_event_types.map(function(event_type) {
-                document.removeEventListener(event_type, miniaudio.unlock, true);
+                document.removeEventListener(event_type, miniaudio.unlock, qtrue);
             });
 
             window.miniaudio.referenceCount -= 1;
@@ -40889,12 +40889,12 @@ static ma_result ma_context_init__webaudio(ma_context* pContext, const ma_contex
                     }
                 }
                 miniaudio.unlock_event_types.map(function(event_type) {
-                    document.removeEventListener(event_type, miniaudio.unlock, true);
+                    document.removeEventListener(event_type, miniaudio.unlock, qtrue);
                 });
             };
 
             miniaudio.unlock_event_types.map(function(event_type) {
-                document.addEventListener(event_type, miniaudio.unlock, true);
+                document.addEventListener(event_type, miniaudio.unlock, qtrue);
             });
         }
 
@@ -46479,7 +46479,7 @@ static ma_result ma_lpf_reinit__internal(const ma_lpf_config* pConfig, void* pHe
     ma_uint32 lpf2Count;
     ma_uint32 ilpf1;
     ma_uint32 ilpf2;
-    ma_lpf_heap_layout heapLayout;  /* Only used if isNew is true. */
+    ma_lpf_heap_layout heapLayout;  /* Only used if isNew is qtrue. */
 
     if (pLPF == NULL || pConfig == NULL) {
         return MA_INVALID_ARGS;
@@ -47341,7 +47341,7 @@ static ma_result ma_hpf_reinit__internal(const ma_hpf_config* pConfig, void* pHe
     ma_uint32 hpf2Count;
     ma_uint32 ihpf1;
     ma_uint32 ihpf2;
-    ma_hpf_heap_layout heapLayout;  /* Only used if isNew is true. */
+    ma_hpf_heap_layout heapLayout;  /* Only used if isNew is qtrue. */
 
     if (pHPF == NULL || pConfig == NULL) {
         return MA_INVALID_ARGS;
@@ -47887,7 +47887,7 @@ static ma_result ma_bpf_reinit__internal(const ma_bpf_config* pConfig, void* pHe
     ma_result result;
     ma_uint32 bpf2Count;
     ma_uint32 ibpf2;
-    ma_bpf_heap_layout heapLayout;  /* Only used if isNew is true. */
+    ma_bpf_heap_layout heapLayout;  /* Only used if isNew is qtrue. */
 
     if (pBPF == NULL || pConfig == NULL) {
         return MA_INVALID_ARGS;
@@ -57818,7 +57818,7 @@ MA_API ma_result ma_data_source_read_pcm_frames(ma_data_source* pDataSource, voi
     }
 
     /*
-    Looping is a bit of a special case. When the `loop` argument is true, chaining will not work and
+    Looping is a bit of a special case. When the `loop` argument is qtrue, chaining will not work and
     only the current data source will be read from.
     */
 
@@ -61277,7 +61277,7 @@ static ma_result ma_decoder__init_data_converter(ma_decoder* pDecoder, const ma_
     converterConfig.pChannelMapOut         = pConfig->pChannelMap;
     converterConfig.channelMixMode         = pConfig->channelMixMode;
     converterConfig.ditherMode             = pConfig->ditherMode;
-    converterConfig.allowDynamicSampleRate = MA_FALSE;   /* Never allow dynamic sample rate conversion. Setting this to true will disable passthrough optimizations. */
+    converterConfig.allowDynamicSampleRate = MA_FALSE;   /* Never allow dynamic sample rate conversion. Setting this to qtrue will disable passthrough optimizations. */
     converterConfig.resampling             = pConfig->resampling;
 
     result = ma_data_converter_init(&converterConfig, &pDecoder->allocationCallbacks, &pDecoder->converter);
@@ -75195,7 +75195,7 @@ static void ma_engine_node_process_pcm_frames__sound(ma_node* pNode, const float
 
             /* If we reached the end of the sound we'll want to mark it as at the end and stop it. This should never be returned for looping sounds. */
             if (result == MA_AT_END) {
-                ma_sound_set_at_end(pSound, MA_TRUE);   /* This will be set to false in ma_sound_start(). */
+                ma_sound_set_at_end(pSound, MA_TRUE);   /* This will be set to qfalse in ma_sound_start(). */
             }
 
             pRunningFramesOut = ma_offset_pcm_frames_ptr_f32(ppFramesOut[0], totalFramesRead, ma_node_get_output_channels(pNode, 0));
@@ -76472,7 +76472,7 @@ MA_API ma_result ma_engine_play_sound_ex(ma_engine* pEngine, const char* pFilePa
     the implementation simple. Maybe this can be optimized later if there's enough demand, but
     if this function is being used it probably means the caller doesn't really care too much.
 
-    What we do is check the atEnd flag. When this is true, we can recycle the sound. Otherwise
+    What we do is check the atEnd flag. When this is qtrue, we can recycle the sound. Otherwise
     we just keep iterating. If we reach the end without finding a sound to recycle we just
     allocate a new one. This doesn't scale well for a massive number of sounds being played
     simultaneously as we don't ever actually free the sound objects. Some kind of garbage

@@ -148,7 +148,7 @@ typedef struct msurface_s
 	int			lightmaptexturenum;
 	byte		styles[MAXLIGHTMAPS];
 	int			cached_light[MAXLIGHTMAPS];	// values currently used in lightmap
-	qboolean	cached_dlight;				// true if dynamic light in cache
+	qboolean	cached_dlight;				// qtrue if dynamic light in cache
 	byte		*samples;		// [numstyles*surfsize]
 } msurface_t;
 

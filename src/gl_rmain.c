@@ -35,7 +35,7 @@ mplane_t	frustum[4];
 
 int			c_brush_polys, c_alias_polys;
 
-qboolean	envmap;				// true during envmap command capture 
+qboolean	envmap;				// qtrue during envmap command capture 
 
 int			currenttexture = -1;		// to avoid unnecessary texture sets
 
@@ -105,7 +105,7 @@ extern	cvar_t	gl_ztrick;
 =================
 R_CullBox
 
-Returns true if the box is completely outside the frustom
+Returns qtrue if the box is completely outside the frustom
 =================
 */
 qboolean R_CullBox (vec3_t mins, vec3_t maxs)
@@ -114,8 +114,8 @@ qboolean R_CullBox (vec3_t mins, vec3_t maxs)
 
 	for (i=0 ; i<4 ; i++)
 		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
-			return true;
-	return false;
+			return qtrue;
+	return qfalse;
 }
 
 
@@ -833,7 +833,7 @@ void R_SetupFrame (void)
 	V_SetContentsColor (r_viewleaf->contents);
 	V_CalcBlend ();
 
-	r_cache_thrash = false;
+	r_cache_thrash = qfalse;
 
 	c_brush_polys = 0;
 	c_alias_polys = 0;
@@ -1099,7 +1099,7 @@ void R_RenderView (void)
 		c_alias_polys = 0;
 	}
 
-	mirror = false;
+	mirror = qfalse;
 
 	if (gl_finish.value)
 		glFinish ();

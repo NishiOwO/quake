@@ -287,7 +287,7 @@ void CL_ParseServerInfo (void)
 
 	for (i=1 ; i<nummodels ; i++)
 	{
-		cl.model_precache[i] = Mod_ForName (model_precache[i], false);
+		cl.model_precache[i] = Mod_ForName (model_precache[i], qfalse);
 		if (cl.model_precache[i] == NULL)
 		{
 			Con_Printf("Model %s not found\n", model_precache[i]);
@@ -312,7 +312,7 @@ void CL_ParseServerInfo (void)
 
 	Hunk_Check ();		// make sure nothing is hurt
 	
-	noclip_anglehack = false;		// noclip is turned off at start	
+	noclip_anglehack = qfalse;		// noclip is turned off at start	
 }
 
 
@@ -363,9 +363,9 @@ if (bits&(1<<i)){
 }
 
 	if (ent->msgtime != cl.mtime[1])
-		forcelink = true;	// no previous frame to lerp from
+		forcelink = qtrue;	// no previous frame to lerp from
 	else
-		forcelink = false;
+		forcelink = qfalse;
 
 	ent->msgtime = cl.mtime[0];
 	
@@ -392,7 +392,7 @@ if (bits&(1<<i)){
 				ent->syncbase = 0.0;
 		}
 		else
-			forcelink = true;	// hack to make null model players work
+			forcelink = qtrue;	// hack to make null model players work
 #ifdef GLQUAKE
 		if (num > 0 && num <= cl.maxclients)
 			R_TranslatePlayerSkin (num - 1);
@@ -473,7 +473,7 @@ if (bits&(1<<i)){
 		ent->msg_angles[0][2] = ent->baseline.angles[2];
 
 	if ( bits & U_NOLERP )
-		ent->forcelink = true;
+		ent->forcelink = qtrue;
 
 	if ( forcelink )
 	{	// didn't have an update last message
@@ -481,7 +481,7 @@ if (bits&(1<<i)){
 		VectorCopy (ent->msg_origins[0], ent->origin);
 		VectorCopy (ent->msg_angles[0], ent->msg_angles[1]);
 		VectorCopy (ent->msg_angles[0], ent->angles);
-		ent->forcelink = true;
+		ent->forcelink = qtrue;
 	}
 }
 
@@ -732,7 +732,7 @@ void CL_ParseServerMessage (void)
 	else if (cl_shownet.value == 2)
 		Con_Printf ("------------------\n");
 	
-	cl.onground = false;	// unless the server says otherwise	
+	cl.onground = qfalse;	// unless the server says otherwise	
 //
 // parse the message
 //
@@ -809,7 +809,7 @@ void CL_ParseServerMessage (void)
 			
 		case svc_serverinfo:
 			CL_ParseServerInfo ();
-			vid.recalc_refdef = true;	// leave intermission full screen
+			vid.recalc_refdef = qtrue;	// leave intermission full screen
 			break;
 			
 		case svc_setangle:
@@ -887,14 +887,14 @@ void CL_ParseServerMessage (void)
 				{
 					CDAudio_Pause ();
 #ifdef WINQUAKE
-					VID_HandlePause (true);
+					VID_HandlePause (qtrue);
 #endif
 				}
 				else
 				{
 					CDAudio_Resume ();
 #ifdef WINQUAKE
-					VID_HandlePause (false);
+					VID_HandlePause (qfalse);
 #endif
 				}
 			}
@@ -931,28 +931,28 @@ void CL_ParseServerMessage (void)
 			cl.cdtrack = MSG_ReadByte ();
 			cl.looptrack = MSG_ReadByte ();
 			if ( (cls.demoplayback || cls.demorecording) && (cls.forcetrack != -1) )
-				CDAudio_Play ((byte)cls.forcetrack, true);
+				CDAudio_Play ((byte)cls.forcetrack, qtrue);
 			else
-				CDAudio_Play ((byte)cl.cdtrack, true);
+				CDAudio_Play ((byte)cl.cdtrack, qtrue);
 			break;
 
 		case svc_intermission:
 			cl.intermission = 1;
 			cl.completed_time = cl.time;
-			vid.recalc_refdef = true;	// go to full screen
+			vid.recalc_refdef = qtrue;	// go to full screen
 			break;
 
 		case svc_finale:
 			cl.intermission = 2;
 			cl.completed_time = cl.time;
-			vid.recalc_refdef = true;	// go to full screen
+			vid.recalc_refdef = qtrue;	// go to full screen
 			SCR_CenterPrint (MSG_ReadString ());			
 			break;
 
 		case svc_cutscene:
 			cl.intermission = 3;
 			cl.completed_time = cl.time;
-			vid.recalc_refdef = true;	// go to full screen
+			vid.recalc_refdef = qtrue;	// go to full screen
 			SCR_CenterPrint (MSG_ReadString ());			
 			break;
 

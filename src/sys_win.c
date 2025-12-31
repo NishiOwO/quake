@@ -40,7 +40,7 @@ static double		curtime = 0.0;
 static double		lastcurtime = 0.0;
 static int			lowshift;
 qboolean			isDedicated;
-static qboolean		sc_return_on_enter = false;
+static qboolean		sc_return_on_enter = qfalse;
 HANDLE				hinput, houtput;
 
 static char			*tracking_tag = "Clams & Mooses";
@@ -337,9 +337,9 @@ void Sys_Init (void)
 	}
 
 	if (vinfo.dwPlatformId == VER_PLATFORM_WIN32_NT)
-		WinNT = true;
+		WinNT = qtrue;
 	else
-		WinNT = false;
+		WinNT = qfalse;
 }
 
 
@@ -382,7 +382,7 @@ void Sys_Error (char *error, ...)
 
 
 		starttime = Sys_FloatTime ();
-		sc_return_on_enter = true;	// so Enter will get us out of here
+		sc_return_on_enter = qtrue;	// so Enter will get us out of here
 
 		while (!Sys_ConsoleInput () &&
 				((Sys_FloatTime () - starttime) < CONSOLE_ERROR_TIMEOUT))

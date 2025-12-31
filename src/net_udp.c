@@ -102,7 +102,7 @@ int UDP_Init (void)
 		*colon = 0;
 
 	Con_Printf("UDP Initialized\n");
-	tcpipAvailable = true;
+	tcpipAvailable = qtrue;
 
 	return net_controlsocket;
 }
@@ -111,7 +111,7 @@ int UDP_Init (void)
 
 void UDP_Shutdown (void)
 {
-	UDP_Listen (false);
+	UDP_Listen (qfalse);
 	UDP_CloseSocket (net_controlsocket);
 }
 
@@ -142,16 +142,16 @@ int UDP_OpenSocket (int port)
 {
 	int newsocket;
 	struct sockaddr_in address;
-	qboolean _true = true;
+	qboolean _qtrue = qtrue;
 
 	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
 		return -1;
 
 #ifdef _WIN32
-	if (ioctl (newsocket, FIONBIO, (u_long*)&_true) == -1)
+	if (ioctl (newsocket, FIONBIO, (u_long*)&_qtrue) == -1)
 		goto ErrorReturn;
 #else
-	if (ioctl (newsocket, FIONBIO, (char *)&_true) == -1)
+	if (ioctl (newsocket, FIONBIO, (char *)&_qtrue) == -1)
 		goto ErrorReturn;
 #endif
 

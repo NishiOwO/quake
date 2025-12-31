@@ -29,7 +29,7 @@ key up events are sent even if in console mode
 #define		MAXCMDLINE	256
 char	key_lines[32][MAXCMDLINE];
 int		key_linepos;
-int		shift_down=false;
+int		shift_down=qfalse;
 int		key_lastpress;
 
 int		edit_line=0;
@@ -40,8 +40,8 @@ keydest_t	key_dest;
 int		key_count;			// incremented every key event
 
 char	*keybindings[256];
-qboolean	consolekeys[256];	// if true, can't be rebound while in console
-qboolean	menubound[256];	// if true, can't be rebound while in menu
+qboolean	consolekeys[256];	// if qtrue, can't be rebound while in console
+qboolean	menubound[256];	// if qtrue, can't be rebound while in menu
 int		keyshift[256];		// key to map to if shift held down in console
 int		key_repeats[256];	// if > 1, it is autorepeating
 qboolean	keydown[256];
@@ -277,7 +277,7 @@ void Key_Console (int key)
 //============================================================================
 
 char chat_buffer[32];
-qboolean team_message = false;
+qboolean team_message = qfalse;
 
 void Key_Message (int key)
 {
@@ -532,21 +532,21 @@ void Key_Init (void)
 // init ascii characters in console mode
 //
 	for (i=32 ; i<128 ; i++)
-		consolekeys[i] = true;
-	consolekeys[K_ENTER] = true;
-	consolekeys[K_TAB] = true;
-	consolekeys[K_LEFTARROW] = true;
-	consolekeys[K_RIGHTARROW] = true;
-	consolekeys[K_UPARROW] = true;
-	consolekeys[K_DOWNARROW] = true;
-	consolekeys[K_BACKSPACE] = true;
-	consolekeys[K_PGUP] = true;
-	consolekeys[K_PGDN] = true;
-	consolekeys[K_SHIFT] = true;
-	consolekeys[K_MWHEELUP] = true;
-	consolekeys[K_MWHEELDOWN] = true;
-	consolekeys['`'] = false;
-	consolekeys['~'] = false;
+		consolekeys[i] = qtrue;
+	consolekeys[K_ENTER] = qtrue;
+	consolekeys[K_TAB] = qtrue;
+	consolekeys[K_LEFTARROW] = qtrue;
+	consolekeys[K_RIGHTARROW] = qtrue;
+	consolekeys[K_UPARROW] = qtrue;
+	consolekeys[K_DOWNARROW] = qtrue;
+	consolekeys[K_BACKSPACE] = qtrue;
+	consolekeys[K_PGUP] = qtrue;
+	consolekeys[K_PGDN] = qtrue;
+	consolekeys[K_SHIFT] = qtrue;
+	consolekeys[K_MWHEELUP] = qtrue;
+	consolekeys[K_MWHEELDOWN] = qtrue;
+	consolekeys['`'] = qfalse;
+	consolekeys['~'] = qfalse;
 
 	for (i=0 ; i<256 ; i++)
 		keyshift[i] = i;
@@ -574,9 +574,9 @@ void Key_Init (void)
 	keyshift['`'] = '~';
 	keyshift['\\'] = '|';
 
-	menubound[K_ESCAPE] = true;
+	menubound[K_ESCAPE] = qtrue;
 	for (i=0 ; i<12 ; i++)
-		menubound[K_F1+i] = true;
+		menubound[K_F1+i] = qtrue;
 
 //
 // register our functions
@@ -752,7 +752,7 @@ void Key_ClearStates (void)
 
 	for (i=0 ; i<256 ; i++)
 	{
-		keydown[i] = false;
+		keydown[i] = qfalse;
 		key_repeats[i] = 0;
 	}
 }
